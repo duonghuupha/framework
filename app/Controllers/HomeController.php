@@ -1,20 +1,19 @@
 <?php
 class HomeController extends Controller {
     public function index() {
-        $users = Home::all();
-        echo "<pre>";
-        print_r($users);
+        $users = Cache::remember('users_all', 300, function() {
+            return Home::all();
+        });
+
+        $this->json([
+            'status' => 'success',
+            'data' => array_map(fn($u) => $u->toArray(), $users)
+        ]);
     }
 
-    public function testCreate() {
-        $user = Home::create([
-            'code' => time(),
-            'username' => 'Nguyen Van Test',
-            'password' => sha1(123456),
-            'email' => 'test@example.com',
-            'create_at' => date("Y-m-d H:i:s")
-        ]);
-        echo "Đã tạo user mới: ";
-        print_r($user->toArray());
+    public function clearCache() {
+        Cache::clear();
+        $this->json(['status' => 'ok', 'message' => 'Đã xóa toàn bộ cache']);
     }
 }
+?>

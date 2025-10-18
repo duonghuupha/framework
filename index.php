@@ -15,8 +15,5 @@ Config::load(__DIR__ . '/.env');
 
 // Khởi tạo cache
 Cache::init('redis');
-Cache::set('test_key', 'Xin chào Redis!', 30);
-echo Cache::get('test_key');
-
 // Khởi tạo App
 new App();
