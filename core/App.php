@@ -1,51 +1,64 @@
 <?php
+
 class App {
     protected $router;
 
     public function __construct() {
-        require_once __DIR__ . '/Router.php';
-        $this->router = new Router();
+        // Khởi tạo hệ thống cache (file hoặc redis)
+        Cache::init('file'); // hoặc 'redis' nếu bạn dùng Redis
 
+        // Tạo router và tự động load cache nếu có
+        $this->router = $this->loadRouterFromCache();
+
+        // Nạp routes và dispatch
         $this->loadRoutes();
-
         $this->router->dispatch();
     }
 
-    private function loadRoutes() {
-        $routeFile = dirname(__DIR__) . '/routes/web.php';
-        $cacheKey = 'framework_routes_cache';
+    /**
+     * Tải router từ cache nếu hợp lệ
+     */
+    private function loadRouterFromCache() {
+        $cacheKey = 'router_cache';
+        $cacheTimeKey = 'router_cache_time';
+        $routesFile = BASE_PATH . '/routes/web.php';
+        $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
 
-        // Kiểm tra file route có tồn tại không
-        if (!file_exists($routeFile)) {
-            echo "Không tìm thấy file route: $routeFile";
-            return;
-        }
+        $cachedRoutes = Cache::get($cacheKey);
+        $cachedTime = Cache::get($cacheTimeKey);
 
-        // Kiểm tra cache
-        $cache = Cache::get($cacheKey);
-        $fileHash = md5_file($routeFile);
+        $router = new Router();
 
-        if ($cache && isset($cache['hash']) && $cache['hash'] === $fileHash) {
-            // Nạp route từ cache
-            $routes = $cache['routes'];
-            foreach ($routes as $method => $items) {
-                foreach ($items as $pattern => $callback) {
-                    $this->router->addRoute($method, $pattern, $callback);
-                }
-            }
-            // echo "(Đã nạp route từ cache Redis)";
+        if (is_array($cachedRoutes) && $cachedTime == $lastModified) {
+            // Nạp routes từ cache
+            $ref = new ReflectionClass($router);
+            $prop = $ref->getProperty('routes');
+            $prop->setAccessible(true);
+            $prop->setValue($router, $cachedRoutes);
         } else {
-            // Nạp route từ file
-            $router = $this->router;
-            require $routeFile;
-
-            // Lưu lại route vào cache
-            $routes = $this->router->getRoutes();
-            Cache::set($cacheKey, [
-                'hash' => $fileHash,
-                'routes' => $routes
-            ]);
-            // echo "(Đã nạp route từ file & lưu vào cache)";
+            // Cache không hợp lệ → xóa
+            Cache::delete($cacheKey);
+            Cache::delete($cacheTimeKey);
         }
+
+        return $router;
+    }
+
+    /**
+     * Nạp file routes/web.php
+     */
+    private function loadRoutes() {
+        $routeFile = BASE_PATH . '/routes/web.php';
+        if (!file_exists($routeFile)) {
+            echo json_encode(['error' => "Không tìm thấy file route: $routeFile"]);
+            exit;
+        }
+
+        // Nạp routes (file web.php sẽ dùng biến $router)
+        $router = $this->router;
+        require $routeFile;
+
+        // Lưu lại cache mới
+        $router->saveCache();
     }
 }

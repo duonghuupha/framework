@@ -2,6 +2,8 @@
 // Bật hiển thị lỗi (debug)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+// Định nghĩa đường dẫn gốc của project
+define('BASE_PATH', __DIR__);
 
 // Nạp autoload
 require_once __DIR__ . '/core/Autoload.php';

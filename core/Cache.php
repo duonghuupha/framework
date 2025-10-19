@@ -1,111 +1,107 @@
 <?php
 class Cache {
-    private static $driver;
-    private static $redis;
-    private static $cachePath;
+    protected static $enabled = false; // bật/tắt cache Redis
+    protected static $redis = null;    // đối tượng Redis
+    protected static $path;            // đường dẫn lưu file cache
+    protected static $prefix = 'fw_';  // tiền tố cho key cache
 
-    public static function init($driver = 'redis') {
-        self::$driver = $driver;
-        self::$cachePath = __DIR__ . '/../storage/cache/';
+    /**
+     * Khởi tạo cache
+     * @param bool $useRedis true nếu dùng Redis
+     */
+    public static function init($useRedis = false) {
+        self::$path = __DIR__ . '/../storage/cache';
 
-        if (!is_dir(self::$cachePath)) {
-            mkdir(self::$cachePath, 0777, true);
+        // Nếu thư mục cache chưa có → tạo
+        if (!file_exists(self::$path)) {
+            mkdir(self::$path, 0777, true);
         }
 
-        if ($driver === 'redis') {
+        if ($useRedis) {
             try {
                 self::$redis = new Redis();
-                $host = Config::get('REDIS_HOST', '127.0.0.1');
-                $port = Config::get('REDIS_PORT', 6379);
-                self::$redis->connect($host, $port, 1);
-
-                $password = Config::get('REDIS_PASSWORD', null);
-                if ($password) {
-                    self::$redis->auth($password);
-                }
-
-                $db = Config::get('REDIS_DB', 0);
-                self::$redis->select($db);
+                self::$redis->connect('127.0.0.1', 6379);
+                self::$enabled = true;
             } catch (Exception $e) {
-                // Nếu Redis lỗi → tự động dùng file
-                self::$driver = 'file';
+                self::$enabled = false; // fallback về file
             }
         }
     }
 
-    public static function set($key, $value, $ttl = 0) {
-        $data = serialize(['value' => $value, 'expire' => $ttl ? time() + $ttl : 0]);
+    /**
+     * Đặt giá trị vào cache
+     */
+    public static function set($key, $value, $ttl = 300) {
+        $cacheKey = self::$prefix . $key;
 
-        if (self::$driver === 'redis' && self::$redis) {
-            try {
-                if ($ttl > 0) {
-                    return self::$redis->setex($key, $ttl, serialize($value));
-                } else {
-                    return self::$redis->set($key, serialize($value));
-                }
-            } catch (Exception $e) {
-                // fallback file
-            }
+        if (self::$enabled && self::$redis) {
+            self::$redis->setex($cacheKey, $ttl, serialize($value));
+        } else {
+            file_put_contents(self::$path . '/' . md5($cacheKey) . '.cache', serialize($value));
         }
-
-        // --- cache file ---
-        $file = self::$cachePath . md5($key) . '.cache';
-        file_put_contents($file, $data);
-        return true;
     }
 
+    /**
+     * Lấy giá trị từ cache
+     */
     public static function get($key) {
-        if (self::$driver === 'redis' && self::$redis) {
-            try {
-                $data = self::$redis->get($key);
-                return $data ? unserialize($data) : null;
-            } catch (Exception $e) {
-                // fallback file
+        $cacheKey = self::$prefix . $key;
+
+        if (self::$enabled && self::$redis) {
+            $cached = self::$redis->get($cacheKey);
+            return $cached ? unserialize($cached) : null;
+        }
+
+        $cacheFile = self::$path . '/' . md5($cacheKey) . '.cache';
+        if (file_exists($cacheFile)) {
+            return unserialize(file_get_contents($cacheFile));
+        }
+
+        return null;
+    }
+
+    /**
+     * Xóa cache theo key
+     */
+    public static function delete($key) {
+        $cacheKey = self::$prefix . $key;
+
+        if (self::$enabled && self::$redis) {
+            self::$redis->del($cacheKey);
+        } else {
+            $cacheFile = self::$path . '/' . md5($cacheKey) . '.cache';
+            if (file_exists($cacheFile)) {
+                unlink($cacheFile);
+            }
+        }
+    }
+
+    /**
+     * Hàm remember() — cache helper thông minh
+     * Lưu cache nếu chưa có, tự động lấy lại nếu có sẵn
+     */
+    public static function remember($key, $ttl, callable $callback) {
+        $cacheKey = self::$prefix . $key;
+
+        // 1️⃣ Kiểm tra cache sẵn có
+        if (self::$enabled && self::$redis) {
+            $cached = self::$redis->get($cacheKey);
+            if ($cached !== false && $cached !== null) {
+                return unserialize($cached);
+            }
+        } else {
+            $cacheFile = self::$path . '/' . md5($cacheKey) . '.cache';
+            if (file_exists($cacheFile) && (filemtime($cacheFile) + $ttl) > time()) {
+                return unserialize(file_get_contents($cacheFile));
             }
         }
 
-        // --- cache file ---
-        $file = self::$cachePath . md5($key) . '.cache';
-        if (!file_exists($file)) return null;
+        // 2️⃣ Nếu chưa có cache → lấy dữ liệu mới
+        $value = call_user_func($callback);
 
-        $data = unserialize(file_get_contents($file));
-        if ($data['expire'] && $data['expire'] < time()) {
-            unlink($file);
-            return null;
-        }
-        return $data['value'];
-    }
+        // 3️⃣ Lưu cache
+        self::set($key, $value, $ttl);
 
-    public static function forget($key) {
-        if (self::$driver === 'redis' && self::$redis) {
-            try {
-                return self::$redis->del($key);
-            } catch (Exception $e) {}
-        }
-
-        $file = self::$cachePath . md5($key) . '.cache';
-        if (file_exists($file)) unlink($file);
-        return true;
-    }
-
-    public static function clear() {
-        if (self::$driver === 'redis' && self::$redis) {
-            try {
-                self::$redis->flushDB();
-            } catch (Exception $e) {}
-        }
-
-        $files = glob(self::$cachePath . '*.cache');
-        foreach ($files as $file) unlink($file);
-        return true;
-    }
-
-    public static function remember($key, $ttl, $callback) {
-        $cached = self::get($key);
-        if ($cached !== null) return $cached;
-
-        $data = $callback();
-        self::set($key, $data, $ttl);
-        return $data;
+        return $value;
     }
 }

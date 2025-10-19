@@ -1,119 +1,112 @@
 <?php
+
 class Router {
     private $routes = [];
-    private $notFound;
+    private $cacheKey = 'router_cache';
+    private $cacheTime = 3600; // 1 giờ
 
-    public function get($uri, $action, $options = []) {
-        $this->addRoute('GET', $uri, $action, $options);
+    public function __construct() {
+        $routesFile = BASE_PATH . '/routes/web.php';
+        $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
+
+        // Lấy cache
+        $cachedData = Cache::get($this->cacheKey);
+        $cachedTime = Cache::get($this->cacheKey . '_time');
+
+        // Kiểm tra hợp lệ
+        if (is_array($cachedData) && $cachedTime && $cachedTime == $lastModified) {
+            $this->routes = $cachedData;
+        } else {
+            // Xóa cache cũ để tránh dữ liệu lỗi
+            Cache::delete($this->cacheKey);
+            Cache::delete($this->cacheKey . '_time');
+        }
     }
 
-    public function post($uri, $action, $options = []) {
-        $this->addRoute('POST', $uri, $action, $options);
+    public function get($path, $callback) {
+        $this->routes['GET'][$this->normalize($path)] = $callback;
     }
 
-    public function put($uri, $action, $options = []) {
-        $this->addRoute('PUT', $uri, $action, $options);
+    public function post($path, $callback) {
+        $this->routes['POST'][$this->normalize($path)] = $callback;
     }
 
-    public function delete($uri, $action, $options = []) {
-        $this->addRoute('DELETE', $uri, $action, $options);
+    public function put($path, $callback) {
+        $this->routes['PUT'][$this->normalize($path)] = $callback;
     }
 
-    private function addRoute($method, $uri, $action, $options = []) {
-        $uri = trim($uri, '/');
-        $this->routes[$method][$uri] = [
-            'action' => $action,
-            'options' => $options
-        ];
+    public function delete($path, $callback) {
+        $this->routes['DELETE'][$this->normalize($path)] = $callback;
     }
 
     public function setNotFound($callback) {
         $this->notFound = $callback;
     }
 
-    public function dispatch() {
-        $uri = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-        $method = $_SERVER['REQUEST_METHOD'];
-
-        // Xử lý override method cho PUT / DELETE qua _method trong form hoặc header
-        if ($method === 'POST' && isset($_POST['_method'])) {
-            $method = strtoupper($_POST['_method']);
-        }
-
-        if (!isset($this->routes[$method])) {
-            return $this->handleNotFound();
-        }
-
-        foreach ($this->routes[$method] as $route => $data) {
-            if ($uri === $route) {
-                return $this->runAction($data['action'], $data['options'], $uri, $method);
-            }
-        }
-
-        return $this->handleNotFound();
+    private function normalize($path) {
+        return '/' . trim($path, '/');
     }
 
-    private function runAction($action, $options, $uri, $method) {
-        // Cache key: method + uri
-        $cacheKey = "route_cache_{$method}_" . md5($uri);
+    public function dispatch() {
+        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $method = $_SERVER['REQUEST_METHOD'];
+        $path = $this->normalize(str_replace(dirname($_SERVER['SCRIPT_NAME']), '', $uri));
 
-        // --- Nếu route có cache ---
-        if (isset($options['cache']) && $options['cache'] > 0) {
-            $cached = Cache::get($cacheKey);
-            if ($cached !== null) {
-                header('Content-Type: application/json');
-                echo $cached;
-                return;
-            }
-        }
-
-        // --- Chạy controller/action ---
-        if (is_callable($action)) {
-            $response = call_user_func($action);
-        } elseif (is_string($action) && strpos($action, '@') !== false) {
-            list($controller, $methodName) = explode('@', $action);
-            if (!class_exists($controller)) {
-                echo json_encode(['error' => "Controller $controller không tồn tại"]);
-                return;
-            }
-            $controllerInstance = new $controller;
-            if (!method_exists($controllerInstance, $methodName)) {
-                echo json_encode(['error' => "Phương thức $methodName không tồn tại trong $controller"]);
-                return;
-            }
-            $response = call_user_func([$controllerInstance, $methodName]);
-        } else {
-            echo json_encode(['error' => "Cấu hình route không hợp lệ"]);
+        if (!isset($this->routes[$method])) {
+            echo json_encode(['error' => 'Cấu hình route không hợp lệ (method)']);
             return;
         }
 
-        // --- Cache kết quả nếu có yêu cầu ---
-        if (isset($options['cache']) && $options['cache'] > 0) {
-            if (is_array($response) || is_object($response)) {
-                $json = json_encode($response, JSON_UNESCAPED_UNICODE);
-                Cache::set($cacheKey, $json, $options['cache']);
-                header('Content-Type: application/json');
-                echo $json;
-            } else {
-                Cache::set($cacheKey, $response, $options['cache']);
-                echo $response;
-            }
-        } else {
-            if (is_array($response) || is_object($response)) {
-                header('Content-Type: application/json');
-                echo json_encode($response, JSON_UNESCAPED_UNICODE);
-            } else {
-                echo $response;
+        foreach ($this->routes[$method] as $route => $callback) {
+            if ($route === $path) {
+                if (is_callable($callback)) {
+                    call_user_func($callback);
+                    return;
+                } elseif (is_string($callback)) {
+                    $this->callController($callback);
+                    return;
+                }
             }
         }
+
+        // Nếu không có route khớp
+        echo json_encode(['error' => 'Không tìm thấy route tương ứng']);
     }
 
-    private function handleNotFound() {
-        http_response_code(404);
-        if ($this->notFound) {
-            call_user_func($this->notFound);
-        } else {
-            echo json_encode(['error' => '404 Not Found']);
+    private function callController($callback) {
+        list($controllerName, $methodName) = explode('@', $callback);
+        $controllerFile = BASE_PATH . '/app/controllers/' . $controllerName . '.php';
+
+        if (!file_exists($controllerFile)) {
+            echo json_encode(['error' => "Không tìm thấy controller: $controllerName"]);
+            return;
         }
+
+        require_once $controllerFile;
+        if (!class_exists($controllerName)) {
+            echo json_encode(['error' => "Không tồn tại lớp: $controllerName"]);
+            return;
+        }
+
+        $controller = new $controllerName();
+        if (!method_exists($controller, $methodName)) {
+            echo json_encode(['error' => "Không tồn tại phương thức: $methodName"]);
+            return;
+        }
+
+        call_user_func([$controller, $methodName]);
+    }
+
+    public function saveCache() {
+        $routesFile = BASE_PATH . '/routes/web.php';
+        $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
+
+        Cache::set($this->cacheKey, $this->routes, $this->cacheTime);
+        Cache::set($this->cacheKey . '_time', $lastModified, $this->cacheTime);
+    }
+
+    public function clearCache() {
+        Cache::delete($this->cacheKey);
+        Cache::delete($this->cacheKey . '_time');
     }
 }
