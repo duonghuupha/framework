@@ -1,53 +1,37 @@
 <?php
-class AuthController extends Controller {
-    public function login() {
-        $data = json_decode(file_get_contents('php://input'), true);
-        $username = $data['username'] ?? '';
-        $password = $data['password'] ?? '';
+class AuthController extends Controller{
+    public function __construct(){
+        $userModel = new User();
+    }
+    public function register(){
+        // Lấy toàn bộ dữ liệu từ form hoặc JSON
+        $data = Input::all();
+        $files = Input::files();
 
-        $user = Database::query("SELECT * FROM tbl_user WHERE username = ? AND password = ?", [$username, sha1($password)]);
-
-        if (!$user) {
-            return $this->json([
-                'status' => "error",
-                'message' => "Sai tài khoản hoặc mật khẩu"
-            ]);
+        // Gộp dữ liệu upload vào
+        if (!empty($files)) {
+            $data = array_merge($data, $files);
         }
 
-        $user = $user[0];
-        $token = JwtHelper::createToken(['user_id' => $user['id'], 'username' => $user['username']]);
+        // Gọi Model xử lý
+        $result = User::register($data);
 
-        // Lưu token vào Redis
-        $cache = new Cache();
-        $cache->set("jwt_token_" . $user['id'], $token, 3600);
-
-        return $this->json(['token' => $token, 'user' => $user]);
+        // Trả JSON phản hồi
+        return $this->json($result);
     }
 
-    public function info() {
-        $headers = getallheaders();
-        $token = $headers['Authorization'] ?? null;
+    public function login(){
+        $data = Input::all();
 
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['error' => 'Thiếu token']);
-            return;
+        if (!$data['username'] || !$data['password']) {
+            return $this->json(['error' => 'Thiếu thông tin đăng nhập']);
         }
 
-        $data = JwtHelper::verifyToken($token);
-        if (!$data) {
-            http_response_code(403);
-            //echo json_encode(['error' => 'Token không hợp lệ hoặc đã hết hạn']);
-            //return;
-            return $this->json([
-                'status' => "error",
-                'message' => "Token không hợp lệ  hoặc hết hạn"
-            ]);
+        $user = User::findByUsername($data['username']);
+        if (!$user || !password_verify(sha1($data['username']), $user['password'])) {
+            return $this->json(['error' => 'Sai tên đăng nhập hoặc mật khẩu']);
         }
-        //echo json_encode(['user' => $data]);
-        return $this->json([
-                'status' => "success",
-                'user' => $data
-            ]);
+
+        return $this->json(['message' => 'Đăng nhập thành công', 'user' => $user]);
     }
 }

@@ -1,78 +1,74 @@
 <?php
-abstract class Model {
+class Model {
     protected static $table = '';
-    protected static $primaryKey = 'id';
-    protected $attributes = [];
+    protected static $db = null;
 
     public function __construct($data = []) {
-        $this->attributes = $data;
+        foreach ($data as $key => $value) {
+            $this->$key = $value;
+        }
     }
 
-    public static function getTable() {
-        return static::$table ?: strtolower(static::class) . 's';
+    // Kết nối database một lần duy nhất
+    protected static function db() {
+        if (self::$db === null) {
+            self::$db = Database::connect();
+        }
+        return self::$db;
     }
 
+    // Lấy tên bảng
+    protected static function getTable() {
+        return static::$table ?: strtolower(static::class);
+    }
+
+    // Lấy tất cả bản ghi
     public static function all() {
         $table = static::getTable();
-        $rows = Database::query("SELECT * FROM {$table}");
-        return array_map(fn($r) => new static($r), $rows);
+        $db = self::db();
+        $stmt = $db->prepare("SELECT * FROM {$table}");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // Tìm theo ID
     public static function find($id) {
         $table = static::getTable();
-        $pk = static::$primaryKey;
-        $rows = Database::query("SELECT * FROM {$table} WHERE {$pk} = ?", [$id]);
-        return $rows ? new static($rows[0]) : null;
+        $db = self::db();
+        $stmt = $db->prepare("SELECT * FROM {$table} WHERE id = :id LIMIT 1");
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    // Tạo mới bản ghi
     public static function create($data) {
         $table = static::getTable();
-        $fields = array_keys($data);
-        $placeholders = implode(',', array_fill(0, count($fields), '?'));
-        $sql = "INSERT INTO {$table} (" . implode(',', $fields) . ") VALUES ({$placeholders})";
+        $db = self::db();
+        $keys = array_keys($data);
+        $fields = implode(',', $keys);
+        $placeholders = ':' . implode(',:', $keys);
 
-        $pdo = Database::connect();
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(array_values($data));
-
-        return static::find($pdo->lastInsertId());
+        $stmt = $db->prepare("INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})");
+        $stmt->execute($data);
+        return $db->lastInsertId();
     }
 
-    public function update($data) {
+    // Cập nhật bản ghi
+    public static function update($id, $data) {
         $table = static::getTable();
-        $pk = static::$primaryKey;
-        $fields = [];
-        foreach ($data as $key => $value) {
-            $fields[] = "{$key} = ?";
-            $this->attributes[$key] = $value;
-        }
-        $sql = "UPDATE {$table} SET " . implode(',', $fields) . " WHERE {$pk} = ?";
-        $params = array_values($data);
-        $params[] = $this->attributes[$pk];
+        $db = self::db();
+        $setStr = implode(',', array_map(fn($k) => "$k = :$k", array_keys($data)));
+        $data['id'] = $id;
 
-        $pdo = Database::connect();
-        $stmt = $pdo->prepare($sql);
-        return $stmt->execute($params);
+        $stmt = $db->prepare("UPDATE {$table} SET {$setStr} WHERE id = :id");
+        return $stmt->execute($data);
     }
 
-    public function delete() {
+    // Xóa bản ghi
+    public static function delete($id) {
         $table = static::getTable();
-        $pk = static::$primaryKey;
-        $sql = "DELETE FROM {$table} WHERE {$pk} = ?";
-        $pdo = Database::connect();
-        $stmt = $pdo->prepare($sql);
-        return $stmt->execute([$this->attributes[$pk]]);
-    }
-
-    public function __get($key) {
-        return $this->attributes[$key] ?? null;
-    }
-
-    public function __set($key, $value) {
-        $this->attributes[$key] = $value;
-    }
-
-    public function toArray() {
-        return $this->attributes;
+        $db = self::db();
+        $stmt = $db->prepare("DELETE FROM {$table} WHERE id = :id");
+        return $stmt->execute(['id' => $id]);
     }
 }
