@@ -6,32 +6,29 @@ class AuthController extends Controller{
     public function register(){
         // Lấy toàn bộ dữ liệu từ form hoặc JSON
         $data = Input::all();
-        $files = Input::files();
-
-        // Gộp dữ liệu upload vào
-        if (!empty($files)) {
-            $data = array_merge($data, $files);
+        if(!$data['username'] || !$data['password']) {
+            return $this->json(['error' => 'Thiếu thông tin đăng nhập']);
         }
-
-        // Gọi Model xử lý
-        $result = User::register($data);
-
-        // Trả JSON phản hồi
-        return $this->json($result);
+        $user = User::findByUsername($data['username']);
+        if(!$user){
+            $result = User::createUser($data['username'], $data['password']);
+            return $this->json(['msg' => User::find($data['username'])]);
+        }else{
+            return $this->json(['error' => 'Thêm mới không thành công']);
+        }
     }
 
     public function login(){
         $data = Input::all();
-
-        if (!$data['username'] || !$data['password']) {
+        if(!$data['username'] || !$data['password']) {
             return $this->json(['error' => 'Thiếu thông tin đăng nhập']);
         }
-
         $user = User::findByUsername($data['username']);
-        if (!$user || !password_verify(sha1($data['username']), $user['password'])) {
+        if (!$user || !password_verify($data['password'], $user['password'])) {
             return $this->json(['error' => 'Sai tên đăng nhập hoặc mật khẩu']);
         }
 
         return $this->json(['message' => 'Đăng nhập thành công', 'user' => $user]);
+        //return $this->json(['msg' => password_verify($data['password'], $user['password'])]);
     }
 }

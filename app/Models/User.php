@@ -7,7 +7,10 @@ class User extends Model {
         return parent::create([
             'username' => $username,
             'password' => $hashed,
-            'code' => time()
+            'code' => time(),
+            'email' => 'abcd@gmail.com',
+            'token' => '',
+            'create_at' => date("Y-m-d H:i:s")
         ]);
     }
 

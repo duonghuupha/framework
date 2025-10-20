@@ -7,7 +7,7 @@ class HomeController extends Controller {
 
         $this->json([
             'status' => 'success',
-            'data' => array_map(fn($u) => $u->toArray(), $users)
+            'data' => $users
         ]);
     }
 
