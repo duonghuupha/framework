@@ -10,11 +10,19 @@ class Controller {
         }
     }
 
-    public function json($data, $status = 200) {
-        header_remove();
-        header("Content-Type: application/json; charset=UTF-8");
-        http_response_code($status);
-        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        exit;
+    protected function json($data = [], $status = 'success', $message = '', $code = 200) {
+        // Nếu $data có chứa status/message thì không cần bọc lại nữa
+        if (is_array($data) && isset($data['status']) && isset($data['message'])) {
+            echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        }
+
+        // Gọi tới lớp Response để thống nhất định dạng
+        if ($status === 'error') {
+            Response::error($message ?: 'Lỗi xử lý', $code, $data);
+        } else {
+            Response::success($message ?: 'Thành công', $data, $code);
+        }
     }
 }
+?>

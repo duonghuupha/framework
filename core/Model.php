@@ -1,74 +1,117 @@
 <?php
-class Model {
-    protected static $table = '';
-    protected static $db = null;
+/**
+ * Class Model
+ * Lớp cha cho tất cả các model trong hệ thống.
+ * Hỗ trợ cache và thao tác DB chuẩn.
+ */
 
-    public function __construct($data = []) {
-        foreach ($data as $key => $value) {
-            $this->$key = $value;
-        }
+class Model
+{
+    protected static $table = '';       // Tên bảng
+    protected static $primaryKey = 'id'; // Khóa chính
+
+    protected static function getDB()
+    {
+        return Database::getInstance()->getConnection();
     }
 
-    // Kết nối database một lần duy nhất
-    protected static function db() {
-        if (self::$db === null) {
-            self::$db = Database::connect();
-        }
-        return self::$db;
+    /**
+     * Thực thi truy vấn SQL có tham số
+     */
+    protected static function execQuery($sql, $params = [])
+    {
+        $db = self::getDB();
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt;
     }
 
-    // Lấy tên bảng
-    protected static function getTable() {
-        return static::$table ?: strtolower(static::class);
+    /**
+     * Lấy toàn bộ dữ liệu (có cache)
+     */
+    public static function all()
+    {
+        $cacheKey = 'table_all_' . static::$table;
+        return Cache::remember($cacheKey, function () {
+            $stmt = self::execQuery("SELECT * FROM " . static::$table);
+            return $stmt->fetchAll();
+        });
     }
 
-    // Lấy tất cả bản ghi
-    public static function all() {
-        $table = static::getTable();
-        $db = self::db();
-        $stmt = $db->prepare("SELECT * FROM {$table}");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    /**
+     * Tìm 1 bản ghi theo id
+     */
+    public static function find($id)
+    {
+        $cacheKey = 'record_' . static::$table . '_' . $id;
+        return Cache::remember($cacheKey, function () use ($id) {
+            $sql = "SELECT * FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
+            $stmt = self::execQuery($sql, [$id]);
+            return $stmt->fetch();
+        });
     }
 
-    // Tìm theo ID
-    public static function find($id) {
-        $table = static::getTable();
-        $db = self::db();
-        $stmt = $db->prepare("SELECT * FROM {$table} WHERE id = :id LIMIT 1");
-        $stmt->execute(['id' => $id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+    /**
+     * Tìm theo điều kiện (trả về mảng)
+     */
+    public static function where($column, $value)
+    {
+        $cacheKey = 'where_' . static::$table . '_' . $column . '_' . md5($value);
+        return Cache::remember($cacheKey, function () use ($column, $value) {
+            $sql = "SELECT * FROM " . static::$table . " WHERE {$column} = ?";
+            $stmt = self::execQuery($sql, [$value]);
+            return $stmt->fetchAll();
+        });
     }
 
-    // Tạo mới bản ghi
-    public static function create($data) {
-        $table = static::getTable();
-        $db = self::db();
+    /**
+     * Thêm dữ liệu mới
+     */
+    public static function insert($data)
+    {
         $keys = array_keys($data);
         $fields = implode(',', $keys);
-        $placeholders = ':' . implode(',:', $keys);
+        $placeholders = implode(',', array_fill(0, count($keys), '?'));
+        $sql = "INSERT INTO " . static::$table . " ($fields) VALUES ($placeholders)";
+        $stmt = self::execQuery($sql, array_values($data));
 
-        $stmt = $db->prepare("INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})");
-        $stmt->execute($data);
-        return $db->lastInsertId();
+        // Xóa cache liên quan
+        Cache::forgetPrefix('table_all_' . static::$table);
+        return self::getDB()->lastInsertId();
     }
 
-    // Cập nhật bản ghi
-    public static function update($id, $data) {
-        $table = static::getTable();
-        $db = self::db();
-        $setStr = implode(',', array_map(fn($k) => "$k = :$k", array_keys($data)));
-        $data['id'] = $id;
+    /**
+     * Cập nhật bản ghi theo id
+     */
+    public static function update($id, $data)
+    {
+        $setParts = [];
+        foreach ($data as $key => $val) {
+            $setParts[] = "{$key} = ?";
+        }
+        $setStr = implode(',', $setParts);
+        $sql = "UPDATE " . static::$table . " SET {$setStr} WHERE " . static::$primaryKey . " = ?";
+        $params = array_values($data);
+        $params[] = $id;
 
-        $stmt = $db->prepare("UPDATE {$table} SET {$setStr} WHERE id = :id");
-        return $stmt->execute($data);
+        self::execQuery($sql, $params);
+
+        // Xóa cache bản ghi cũ
+        Cache::forget('record_' . static::$table . '_' . $id);
+        Cache::forgetPrefix('table_all_' . static::$table);
+        return true;
     }
 
-    // Xóa bản ghi
-    public static function delete($id) {
-        $table = static::getTable();
-        $db = self::db();
-        $stmt = $db->prepare("DELETE FROM {$table} WHERE id = :id");
-        return $stmt->execute(['id' => $id]);
+    /**
+     * Xóa bản ghi theo id
+     */
+    public static function delete($id)
+    {
+        $sql = "DELETE FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
+        self::execQuery($sql, [$id]);
+
+        Cache::forget('record_' . static::$table . '_' . $id);
+        Cache::forgetPrefix('table_all_' . static::$table);
+        return true;
     }
 }

@@ -1,34 +1,76 @@
 <?php
 class AuthController extends Controller{
+    protected $userModel;
     public function __construct(){
-        $userModel = new User();
+        $this->userModel = new User();
     }
+    // Đăng ký người dùng
     public function register(){
-        // Lấy toàn bộ dữ liệu từ form hoặc JSON
-        $data = Input::all();
-        if(!$data['username'] || !$data['password']) {
-            return $this->json(['error' => 'Thiếu thông tin đăng nhập']);
+        $input = Input::all();
+        if (empty($input['username']) || empty($input['password']) || empty($input['email'])) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Thiếu thông tin đăng ký.'
+            ]);
         }
-        $user = User::findByUsername($data['username']);
-        if(!$user){
-            $result = User::createUser($data['username'], $data['password']);
-            return $this->json(['msg' => User::find($data['username'])]);
-        }else{
-            return $this->json(['error' => 'Thêm mới không thành công']);
+        // Kiểm tra trùng username hoặc email
+        if ($this->userModel->isExist('username', $input['username']) || $this->userModel->isExist('email', $input['email'])) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Tên đăng nhập hoặc email đã tồn tại.'
+            ]);
         }
+        $userId = $this->userModel->createUser($input);
+        if ($userId) {
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Đăng ký thành công.',
+                'data' => [
+                    'user_id' => $userId,
+                    'username' => $input['username'],
+                    'email' => $input['email']
+                ]
+            ]);
+        }
+        return $this->json([
+            'status' => 'error',
+            'message' => 'Không thể đăng ký, vui lòng thử lại sau.'
+        ]);
     }
-
+    // Đăng nhập
     public function login(){
-        $data = Input::all();
-        if(!$data['username'] || !$data['password']) {
-            return $this->json(['error' => 'Thiếu thông tin đăng nhập']);
+        $input = Input::all();
+        if (empty($input['username']) || empty($input['password'])) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Thiếu thông tin đăng nhập.'
+            ]);
         }
-        $user = User::findByUsername($data['username']);
-        if (!$user || !password_verify($data['password'], $user['password'])) {
-            return $this->json(['error' => 'Sai tên đăng nhập hoặc mật khẩu']);
+        // Kiểm tra cache trước
+        $cacheKey = 'user_' . md5($input['username']);
+        $user = Cache::get($cacheKey);
+        if (!$user) {
+            $user = $this->userModel->getUserByUsername($input['username']);
+            if ($user) {
+                // Lưu cache trong 10 phút
+                Cache::set($cacheKey, $user, 600);
+            }
+        }
+        if ($user && password_verify($input['password'], $user['password'])) {
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Đăng nhập thành công.',
+                'data' => [
+                    'user_id' => $user['id'],
+                    'username' => $user['username'],
+                    'email' => $user['email']
+                ]
+            ]);
         }
 
-        return $this->json(['message' => 'Đăng nhập thành công', 'user' => $user]);
-        //return $this->json(['msg' => password_verify($data['password'], $user['password'])]);
+        return $this->json([
+            'status' => 'error',
+            'message' => 'Tên đăng nhập hoặc mật khẩu không đúng.'
+        ]);
     }
 }

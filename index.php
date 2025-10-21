@@ -15,7 +15,8 @@ require_once __DIR__ . '/Core/Database.php';
 // Nạp cấu hình .env
 Config::load(__DIR__ . '/.env');
 
-// Khởi tạo cache
-Cache::init('redis');
+// Khởi tạo cache Cache::init('redis');
+// gọi init tự động (hoặc bạn có thể gọi Cache::init() ở index.php)
+Cache::init();
 // Khởi tạo App
 new App();
