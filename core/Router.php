@@ -1,5 +1,4 @@
 <?php
-
 class Router {
     private $routes = [];
     private $cacheKey = 'router_cache';
@@ -9,19 +8,25 @@ class Router {
         $routesFile = BASE_PATH . '/routes/web.php';
         $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
 
-        // Lấy cache
         $cachedData = Cache::get($this->cacheKey);
         $cachedTime = Cache::get($this->cacheKey . '_time');
 
-        // Kiểm tra hợp lệ
         if (is_array($cachedData) && $cachedTime && $cachedTime == $lastModified) {
             $this->routes = $cachedData;
         } else {
-            // Xóa cache cũ để tránh dữ liệu lỗi
             Cache::delete($this->cacheKey);
             Cache::delete($this->cacheKey . '_time');
+
+            if (file_exists($routesFile)) {
+                // 🔹 Nạp file web.php
+                $router = $this;
+                require $routesFile;
+                // 🔹 Lưu cache mới
+                $this->saveCache();
+            }
         }
     }
+
 
     public function get($path, $callback) {
         $this->routes['GET'][$this->normalize($path)] = $callback;

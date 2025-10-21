@@ -18,5 +18,7 @@ Config::load(__DIR__ . '/.env');
 // Khởi tạo cache Cache::init('redis');
 // gọi init tự động (hoặc bạn có thể gọi Cache::init() ở index.php)
 Cache::init();
+Cache::delete('router_cache');
+Cache::delete('router_cache_time');
 // Khởi tạo App
 new App();

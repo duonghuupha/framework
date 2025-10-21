@@ -1,13 +1,11 @@
 <?php
 class HomeController extends Controller {
     public function index() {
-        $users = Cache::remember('users_all', 300, function() {
-            return Home::all();
-        });
-
-        $this->json([
+        $users = Home::all();
+        return $this->json([
             'status' => 'success',
-            'data' => $users
+            'message' => 'Load dữ liệu thành công',
+            'data' => [$users]
         ]);
     }
 

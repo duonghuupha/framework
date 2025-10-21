@@ -1,17 +1,14 @@
 <?php
-
 class App {
     protected $router;
-
     public function __construct() {
         // Khởi tạo hệ thống cache (file hoặc redis)
         Cache::init('file'); // hoặc 'redis' nếu bạn dùng Redis
 
-        // Tạo router và tự động load cache nếu có
-        $this->router = $this->loadRouterFromCache();
+        // 🔹 Khởi tạo router (Router tự nạp routes hoặc từ cache)
+        $this->router = new Router();
 
-        // Nạp routes và dispatch
-        $this->loadRoutes();
+        // 🔹 Thực thi điều hướng
         $this->router->dispatch();
     }
 

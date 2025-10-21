@@ -4,22 +4,18 @@
  * Lớp cha cho tất cả các model trong hệ thống.
  * Hỗ trợ cache và thao tác DB chuẩn.
  */
-
-class Model
-{
+class Model{
     protected static $table = '';       // Tên bảng
     protected static $primaryKey = 'id'; // Khóa chính
 
-    protected static function getDB()
-    {
+    protected static function getDB(){
         return Database::getInstance()->getConnection();
     }
 
     /**
      * Thực thi truy vấn SQL có tham số
      */
-    protected static function execQuery($sql, $params = [])
-    {
+    protected static function execQuery($sql, $params = []){
         $db = self::getDB();
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
@@ -29,8 +25,7 @@ class Model
     /**
      * Lấy toàn bộ dữ liệu (có cache)
      */
-    public static function all()
-    {
+    public static function all(){
         $cacheKey = 'table_all_' . static::$table;
         return Cache::remember($cacheKey, function () {
             $stmt = self::execQuery("SELECT * FROM " . static::$table);
@@ -41,8 +36,7 @@ class Model
     /**
      * Tìm 1 bản ghi theo id
      */
-    public static function find($id)
-    {
+    public static function find($id){
         $cacheKey = 'record_' . static::$table . '_' . $id;
         return Cache::remember($cacheKey, function () use ($id) {
             $sql = "SELECT * FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
@@ -54,8 +48,7 @@ class Model
     /**
      * Tìm theo điều kiện (trả về mảng)
      */
-    public static function where($column, $value)
-    {
+    public static function where($column, $value){
         $cacheKey = 'where_' . static::$table . '_' . $column . '_' . md5($value);
         return Cache::remember($cacheKey, function () use ($column, $value) {
             $sql = "SELECT * FROM " . static::$table . " WHERE {$column} = ?";
@@ -67,8 +60,7 @@ class Model
     /**
      * Thêm dữ liệu mới
      */
-    public static function insert($data)
-    {
+    public static function insert($data){
         $keys = array_keys($data);
         $fields = implode(',', $keys);
         $placeholders = implode(',', array_fill(0, count($keys), '?'));
@@ -83,8 +75,7 @@ class Model
     /**
      * Cập nhật bản ghi theo id
      */
-    public static function update($id, $data)
-    {
+    public static function update($id, $data){
         $setParts = [];
         foreach ($data as $key => $val) {
             $setParts[] = "{$key} = ?";
@@ -105,8 +96,7 @@ class Model
     /**
      * Xóa bản ghi theo id
      */
-    public static function delete($id)
-    {
+    public static function delete($id){
         $sql = "DELETE FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
         self::execQuery($sql, [$id]);
 
