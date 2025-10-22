@@ -3,8 +3,20 @@ class User extends Model{
     protected static $table = 'tbl_user';
     protected static $primaryKey = 'id';
     
-    public function getUserByUsername($username){
+    public static function getUserByUsername($username){
         $users = self::where('username', $username);
-        return $users ? $users[0] : null;
+        if(!$users) return false;
+        // neu where tra ve array of rows
+        if(isset($users[0]) && is_array($users[0])){
+            return $users[0];
+        }
+        // neu whewre tra 1 ban ghi dangj assoc
+        return $users;
+    }
+
+    public static function storeTokenForUser($userId, $token, $ttl = 86400){
+        $key = "auth_token:{$token}";
+        Cache::set($key, ['user_id' => $userId, 'created_at' => time()], $ttl);
+        Cache::set("user_token:{$userId}", $token, $ttl);
     }
 }
