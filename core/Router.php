@@ -1,117 +1,125 @@
 <?php
-class Router {
+// core/Router.php
+
+require_once __DIR__ . '/Middleware.php';
+
+class Router
+{
     private $routes = [];
-    private $cacheKey = 'router_cache';
-    private $cacheTime = 3600; // 1 giờ
+    private $currentMiddleware = null;
 
-    public function __construct() {
-        $routesFile = BASE_PATH . '/routes/web.php';
-        $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
-
-        $cachedData = Cache::get($this->cacheKey);
-        $cachedTime = Cache::get($this->cacheKey . '_time');
-
-        if (is_array($cachedData) && $cachedTime && $cachedTime == $lastModified) {
-            $this->routes = $cachedData;
-        } else {
-            Cache::delete($this->cacheKey);
-            Cache::delete($this->cacheKey . '_time');
-
-            if (file_exists($routesFile)) {
-                // 🔹 Nạp file web.php
-                $router = $this;
-                require $routesFile;
-                // 🔹 Lưu cache mới
-                $this->saveCache();
-            }
-        }
+    /**
+     * Gắn middleware cho route tiếp theo (ví dụ: ->middleware('AuthMiddleware'))
+     */
+    public function middleware($middleware)
+    {
+        $this->currentMiddleware = $middleware;
+        return $this; // Cho phép chain tiếp, ví dụ: ->get()
     }
 
-
-    public function get($path, $callback) {
-        $this->routes['GET'][$this->normalize($path)] = $callback;
+    /**
+     * Đăng ký route GET
+     */
+    public function get($path, $callback)
+    {
+        $this->addRoute('GET', $path, $callback);
     }
 
-    public function post($path, $callback) {
-        $this->routes['POST'][$this->normalize($path)] = $callback;
+    /**
+     * Đăng ký route POST
+     */
+    public function post($path, $callback)
+    {
+        $this->addRoute('POST', $path, $callback);
     }
 
-    public function put($path, $callback) {
-        $this->routes['PUT'][$this->normalize($path)] = $callback;
+    /**
+     * Hàm nội bộ thêm route vào danh sách
+     */
+    private function addRoute($method, $path, $callback)
+    {
+        $this->routes[] = [
+            'method' => strtoupper($method),
+            'path' => $this->normalizePath($path),
+            'callback' => $callback,
+            'middleware' => $this->currentMiddleware
+        ];
+
+        // Reset middleware sau khi dùng để tránh ảnh hưởng route khác
+        $this->currentMiddleware = null;
     }
 
-    public function delete($path, $callback) {
-        $this->routes['DELETE'][$this->normalize($path)] = $callback;
+    /**
+     * Hàm chuẩn hóa path (thêm / đầu và bỏ / cuối)
+     */
+    private function normalizePath($path)
+    {
+        $path = '/' . trim($path, '/');
+        return $path === '//' ? '/' : $path;
     }
 
-    public function setNotFound($callback) {
-        $this->notFound = $callback;
-    }
-
-    private function normalize($path) {
-        return '/' . trim($path, '/');
-    }
-
-    public function dispatch() {
+    /**
+     * Chạy router
+     */
+    public function dispatch()
+    {
+        // Lấy URI hiện tại
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $method = $_SERVER['REQUEST_METHOD'];
-        $path = $this->normalize(str_replace(dirname($_SERVER['SCRIPT_NAME']), '', $uri));
 
-        if (!isset($this->routes[$method])) {
-            echo json_encode(['error' => 'Cấu hình route không hợp lệ (method)']);
-            return;
+        // Loại bỏ thư mục gốc nếu có (ví dụ /framework/)
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+        if ($scriptDir !== '/' && str_starts_with($uri, $scriptDir)) {
+            $uri = substr($uri, strlen($scriptDir));
         }
 
-        foreach ($this->routes[$method] as $route => $callback) {
-            if ($route === $path) {
-                if (is_callable($callback)) {
-                    call_user_func($callback);
-                    return;
-                } elseif (is_string($callback)) {
-                    $this->callController($callback);
-                    return;
+        // Chuẩn hóa URI
+        $uri = $this->normalizePath($uri);
+
+        foreach ($this->routes as $route) {
+            if ($route['method'] === $method && $route['path'] === $uri) {
+                // Nếu có middleware thì gọi nó
+                if (!empty($route['middleware'])) {
+                    Middleware::handle($route['middleware']);
                 }
+
+                // Gọi callback hoặc controller
+                return $this->executeCallback($route['callback']);
             }
         }
 
-        // Nếu không có route khớp
-        echo json_encode(['error' => 'Không tìm thấy route tương ứng']);
+        // Nếu không có route nào khớp
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Không tìm thấy route: ' . $uri]);
     }
 
-    private function callController($callback) {
-        list($controllerName, $methodName) = explode('@', $callback);
-        $controllerFile = BASE_PATH . '/app/controllers/' . $controllerName . '.php';
-
-        if (!file_exists($controllerFile)) {
-            echo json_encode(['error' => "Không tìm thấy controller: $controllerName"]);
-            return;
+    /**
+     * Gọi callback hoặc controller@action
+     */
+    private function executeCallback($callback)
+    {
+        if (is_callable($callback)) {
+            return call_user_func($callback);
         }
 
-        require_once $controllerFile;
-        if (!class_exists($controllerName)) {
-            echo json_encode(['error' => "Không tồn tại lớp: $controllerName"]);
-            return;
+        if (is_string($callback) && strpos($callback, '@') !== false) {
+            list($controllerName, $actionName) = explode('@', $callback);
+            $controllerFile = __DIR__ . '/../app/controllers/' . $controllerName . '.php';
+
+            if (!file_exists($controllerFile)) {
+                throw new Exception("Không tìm thấy file controller: $controllerFile");
+            }
+
+            require_once $controllerFile;
+            $controller = new $controllerName();
+
+            if (!method_exists($controller, $actionName)) {
+                throw new Exception("Không tìm thấy action '$actionName' trong controller '$controllerName'");
+            }
+
+            return call_user_func([$controller, $actionName]);
         }
 
-        $controller = new $controllerName();
-        if (!method_exists($controller, $methodName)) {
-            echo json_encode(['error' => "Không tồn tại phương thức: $methodName"]);
-            return;
-        }
-
-        call_user_func([$controller, $methodName]);
-    }
-
-    public function saveCache() {
-        $routesFile = BASE_PATH . '/routes/web.php';
-        $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
-
-        Cache::set($this->cacheKey, $this->routes, $this->cacheTime);
-        Cache::set($this->cacheKey . '_time', $lastModified, $this->cacheTime);
-    }
-
-    public function clearCache() {
-        Cache::delete($this->cacheKey);
-        Cache::delete($this->cacheKey . '_time');
+        throw new Exception("Callback không hợp lệ cho route");
     }
 }

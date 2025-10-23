@@ -5,31 +5,6 @@ class AuthController extends Controller{
     public function __construct(){
         $this->userModel = new User();
     }
-
-    public function info(){
-        $userId = $this->checkTokenReturnUserId();
-        if (!$userId) {
-            return $this->json([
-                'status' => 'error',
-                'message' => 'Token không hợp lệ hoặc đã hết hạn.'
-            ]);
-        }
-
-        // Gọi model để lấy thông tin người dùng
-        $user = $this->userModel->getUserById($userId);
-        if (!$user) {
-            return $this->json([
-                'status' => 'error',
-                'message' => 'Không tìm thấy người dùng.'
-            ]);
-        }
-
-        return $this->json([
-            'status' => 'success',
-            'message' => 'Lấy thông tin người dùng thành công',
-            'data' => $user
-        ]);
-    }
     
     // Đăng nhập
     public function login(){
@@ -48,25 +23,17 @@ class AuthController extends Controller{
                 'message' => 'Tên đăng nhập hoặc mật khẩu không đúng.'
             ]);
         }
-        try{
-            $token = bin2hex(random_bytes(32)); // 64 hex chars
-        }catch(Exception $e){
-            $token = sha1($user['id'].microtime(true).rand());
-        }
 
-        // luu token vao redis (key: auth_token:<token> => user_id) voi TTL
-        $cacheKey = "auth_token:{$token}";
-        Cache::set($cacheKey, ["user_id" => $user['id'], "create_at" => time()], $this->tokenTTL);
-
-        // tuy chon luu nguoc: luu token hien tai cho user de de invalid sau nay
-        $userTokenKey = "user_token:{$user['id']}";
-        Cache::set($userTokenKey, $token, $this->tokenTTL);
-
-        // tra token cho frontend
-        $data = [
-            "token" => $token,
-            "expires_in" => $this->tokenTTL,
-            "user" => [
+        // Sinh JWT va luu vao cache (JWTHelper::issueAndStore tu luu)
+        $payload = [
+            'user_id' => $user['id'],
+            'username' => $user['username']
+        ];
+        $token = JWTHelper::issueAndStore($payload); // dung TTL mac dinh
+        $data =[
+            'token' => $token,
+            'expires_in' => JWTHelper::ttl(),
+            'user' => [
                 'id' => $user['id'],
                 'username' => $user['username'],
                 'email' => $user['email']
@@ -79,29 +46,41 @@ class AuthController extends Controller{
         ]);
     }
 
-    // POST /logout  (yêu cầu header Authorization: Bearer <token>)
+    // POST /logout
     public function logout(){
         $token = $this->getBearerToken();
         if (!$token) {
             return $this->json([], 'error', 'Thiếu token', 400);
         }
 
-        $cacheKey = "auth_token:{$token}";
-        $info = Cache::get($cacheKey);
-        if ($info && isset($info['user_id'])) {
-            // xóa key token và user->token
-            Cache::delete($cacheKey);
-            Cache::delete("user_token:{$info['user_id']}");
-        } else {
-            // vẫn trả success (idempotent)
+        $payload = JWTHelper::decode($token);
+        if ($payload && isset($payload['user_id'])) {
+            JWTHelper::revokeByUserId($payload['user_id']);
+            return $this->json([], 'success', 'Đã đăng xuất', 200);
         }
 
+        // nếu decode fail, vẫn xóa key md5 nếu có
+        JWTHelper::revokeToken($token);
         return $this->json([], 'success', 'Đã đăng xuất', 200);
     }
 
-    // Hàm helper lấy token từ header Authorization: Bearer <token>
+    // GET /info
+    public function info(){
+        $token = $this->getBearerToken();
+        if (!$token) return $this->json([], 'error', 'Thiếu token', 401);
+
+        $payload = JWTHelper::validate($token);
+        if (!$payload) return $this->json([], 'error', 'Token không hợp lệ hoặc đã hết hạn', 401);
+
+        // Lấy user từ model
+        $user = $this->userModel->getUserById($payload['user_id']);
+        if (!$user) return $this->json([], 'error', 'Không tìm thấy người dùng', 404);
+
+        return $this->json(['user' => $user], 'success', '', 200);
+    }
+
+    // helper lấy Bearer token từ header
     protected function getBearerToken(){
-        // getallheaders() có thể không tồn tại trên một số môi trường CLI, fallback:
         if (function_exists('getallheaders')) {
             $headers = getallheaders();
             $auth = $headers['Authorization'] ?? ($headers['authorization'] ?? null);
@@ -114,22 +93,5 @@ class AuthController extends Controller{
             return trim(substr($auth, 7));
         }
         return null;
-    }
-
-    // Kiểm tra token và trả user id (dùng trong controller khác nếu cần)
-    public static function checkTokenReturnUserId(){
-        // Vì là static, dùng getallheaders tương tự
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            $auth = $headers['Authorization'] ?? ($headers['authorization'] ?? null);
-        } else {
-            $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null);
-        }
-        if (!$auth || stripos($auth, 'Bearer ') !== 0) return null;
-        $token = trim(substr($auth, 7));
-        $info = Cache::get("auth_token:{$token}");
-        if (!$info) return null;
-        // optional: refresh TTL if muốn "sliding session"
-        return $info['user_id'] ?? null;
     }
 }
