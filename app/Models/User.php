@@ -14,6 +14,14 @@ class User extends Model{
         return $users;
     }
 
+    public static function getUserById($id){
+        $users = self::where('id', $id);
+        if(isset($users[0]) && is_array($users[0])){
+            return $users[0];
+        }
+        return $users;
+    }
+
     public static function storeTokenForUser($userId, $token, $ttl = 86400){
         $key = "auth_token:{$token}";
         Cache::set($key, ['user_id' => $userId, 'created_at' => time()], $ttl);

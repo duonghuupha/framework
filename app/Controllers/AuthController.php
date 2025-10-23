@@ -5,6 +5,31 @@ class AuthController extends Controller{
     public function __construct(){
         $this->userModel = new User();
     }
+
+    public function info(){
+        $userId = $this->checkTokenReturnUserId();
+        if (!$userId) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Token không hợp lệ hoặc đã hết hạn.'
+            ]);
+        }
+
+        // Gọi model để lấy thông tin người dùng
+        $user = $this->userModel->getUserById($userId);
+        if (!$user) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Không tìm thấy người dùng.'
+            ]);
+        }
+
+        return $this->json([
+            'status' => 'success',
+            'message' => 'Lấy thông tin người dùng thành công',
+            'data' => $user
+        ]);
+    }
     
     // Đăng nhập
     public function login(){

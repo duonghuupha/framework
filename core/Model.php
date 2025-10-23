@@ -58,6 +58,17 @@ class Model{
     }
 
     /**
+     * Truy vấn phức tạp
+     */
+    public static function dynamicQuery($sql, $params = [], $ttl = 30){
+        $cacheKey = 'dynamic_'.md5($sql.json_encode($params));
+        return Cache::remember($cacheKey, $ttl, function() use ($sql, $params)){
+            $stmt = self::execQuery($sql, $params);
+            return $stmt->fetchAll();
+        }
+    }
+
+    /**
      * Thêm dữ liệu mới
      */
     public static function insert($data){
