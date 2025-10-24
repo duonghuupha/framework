@@ -1,0 +1,2 @@
+2025-10-23T19:46:42+03:00 | REQUEST_URI: / | SCRIPT_NAME: /index.php | normalized uri: / | method: GET
+2025-10-23T19:46:52+03:00 | REQUEST_URI: /login | SCRIPT_NAME: /index.php | normalized uri: /login | method: POST
