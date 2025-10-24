@@ -1,34 +1,29 @@
 <?php
-class Router {
+// core/Router.php
+
+class Router
+{
     private $routes = [];
     private $currentMiddleware = null;
 
-    /**
-     * Gán middleware cho route kế tiếp
-     */
-    public function middleware($middleware) {
+    public function middleware($middleware)
+    {
         $this->currentMiddleware = $middleware;
-        return $this;
+        return $this; // cho phép chain như ->get() hoặc ->post()
     }
 
-    /**
-     * Đăng ký GET route
-     */
-    public function get($path, $callback) {
+    public function get($path, $callback)
+    {
         $this->addRoute('GET', $path, $callback);
     }
 
-    /**
-     * Đăng ký POST route
-     */
-    public function post($path, $callback) {
+    public function post($path, $callback)
+    {
         $this->addRoute('POST', $path, $callback);
     }
 
-    /**
-     * Thêm route vào danh sách
-     */
-    private function addRoute($method, $path, $callback) {
+    private function addRoute($method, $path, $callback)
+    {
         $this->routes[] = [
             'method' => strtoupper($method),
             'path' => $path,
@@ -36,63 +31,97 @@ class Router {
             'middleware' => $this->currentMiddleware
         ];
 
-        // reset middleware để không áp dụng cho route tiếp theo
+        // reset middleware cho route sau
         $this->currentMiddleware = null;
     }
 
-    /**
-     * Dispatch router
-     */
-    public function dispatch() {
-        $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $uri = rtrim($uri, '/'); // loại bỏ dấu / cuối
-        if ($uri === '') $uri = '/';
+    public function dispatch()
+{
 
-        $method = $_SERVER['REQUEST_METHOD'];
+    header('Content-Type: application/json');
 
-        foreach ($this->routes as $route) {
-            if ($route['method'] === $method && $route['path'] === $uri) {
-                // ✅ Xử lý middleware
-                if (!empty($route['middleware'])) {
-                    if (!class_exists($route['middleware'])) {
-                        throw new Exception("Middleware {$route['middleware']} không tồn tại.");
-                    }
+    /*$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $method = $_SERVER['REQUEST_METHOD'];
 
-                    $middlewareClass = $route['middleware'];
+    // ⚠️ Debug tạm thời để xem router nhận được gì
+    echo json_encode([
+        'debug_uri' => $uri,
+        'debug_method' => $method,
+        'script_name' => $_SERVER['SCRIPT_NAME'],
+        'base_path' => dirname($_SERVER['SCRIPT_NAME'])
+    ]);
+    exit;*/
+
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+    if ($scriptDir !== '/' && str_starts_with($uri, $scriptDir)) {
+        $uri = substr($uri, strlen($scriptDir));
+    }
+    $uri = '/' . ltrim($uri, '/');
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    // Lấy thư mục gốc ứng dụng (ví dụ: /framework)
+    $basePath = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+    if ($basePath !== '/' && strpos($uri, $basePath) === 0) {
+        // Loại bỏ /framework khỏi URI
+        $uri = substr($uri, strlen($basePath));
+    }
+
+    // Chuẩn hóa lại URI
+    $uri = rtrim($uri, '/') ?: '/';
+
+    foreach ($this->routes as $route) {
+        $normalizedRoute = rtrim($route['path'], '/');
+        $normalizedUri   = rtrim($uri, '/');
+
+        if ($route['method'] === $method && $normalizedRoute === $normalizedUri) {
+
+            // Middleware
+            if (!empty($route['middleware'])) {
+                $middlewareClass = $route['middleware'];
+                $middlewareFile = __DIR__ . '/' . $middlewareClass . '.php';
+
+                if (file_exists($middlewareFile)) {
+                    require_once $middlewareFile;
                     $middleware = new $middlewareClass();
-                    $middleware->handle();
-                }
-
-                // ✅ Gọi Controller hoặc Callback
-                if (is_callable($route['callback'])) {
-                    return call_user_func($route['callback']);
-                }
-
-                if (is_string($route['callback'])) {
-                    list($controllerName, $actionName) = explode('@', $route['callback']);
-                    $controllerFile = BASE_PATH . '/app/Controllers/' . $controllerName . '.php';
-
-                    if (!file_exists($controllerFile)) {
-                        throw new Exception("Không tìm thấy controller: $controllerFile");
+                    if (method_exists($middleware, 'handle')) {
+                        $middleware->handle();
                     }
-
-                    require_once $controllerFile;
-                    $controller = new $controllerName();
-
-                    if (!method_exists($controller, $actionName)) {
-                        throw new Exception("Không tồn tại action '$actionName' trong controller '$controllerName'");
-                    }
-
-                    return call_user_func([$controller, $actionName]);
                 }
             }
-        }
 
-        // ❌ Không tìm thấy route
-        http_response_code(404);
-        echo json_encode([
-            'status' => 'error',
-            'message' => "Không tìm thấy route tương ứng với $method $uri"
-        ]);
+            // Gọi controller hoặc callback
+            if (is_callable($route['callback'])) {
+                return call_user_func($route['callback']);
+            }
+
+            if (is_string($route['callback'])) {
+                list($controllerName, $actionName) = explode('@', $route['callback']);
+                $controllerFile = __DIR__ . '/../app/controllers/' . $controllerName . '.php';
+
+                if (!file_exists($controllerFile)) {
+                    http_response_code(500);
+                    echo json_encode(['status' => 'error', 'message' => "Không tìm thấy controller: $controllerFile"]);
+                    return;
+                }
+
+                require_once $controllerFile;
+                $controller = new $controllerName();
+
+                if (!method_exists($controller, $actionName)) {
+                    http_response_code(500);
+                    echo json_encode(['status' => 'error', 'message' => "Không tìm thấy action '$actionName' trong '$controllerName'"]);
+                    return;
+                }
+
+                return call_user_func([$controller, $actionName]);
+            }
+        }
     }
+
+    // Nếu không có route khớp
+    http_response_code(404);
+    echo json_encode(['status' => 'error', 'message' => "Không tìm thấy route tương ứng với $method $uri"]);
+}
+
 }
