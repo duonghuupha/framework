@@ -6,7 +6,7 @@ class HomeController extends Controller {
 
         $payload = JWTHelper::validate($token);
         if (!$payload) return $this->json([], 'error', 'Token không hợp lệ hoặc đã hết hạn', 401);
-        
+
         $users = Home::all();
         return $this->json([
             'status' => 'success',
@@ -16,8 +16,8 @@ class HomeController extends Controller {
     }
 
     public function clearCache() {
-        Cache::clear();
-        $this->json(['status' => 'ok', 'message' => 'Đã xóa toàn bộ cache']);
+        Cache::clearAll();
+        $this->json(['status' => 'success', 'message' => 'Đã xóa toàn bộ cache']);
     }
 }
 ?>
