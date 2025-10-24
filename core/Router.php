@@ -1,98 +1,117 @@
 <?php
 class Router {
     private $routes = [];
-    private $currentMiddleware = null;
+    private $cacheKey = 'router_cache';
+    private $cacheTime = 3600; // 1 giờ
 
-    /**
-     * Gán middleware cho route kế tiếp
-     */
-    public function middleware($middleware) {
-        $this->currentMiddleware = $middleware;
-        return $this;
+    public function __construct() {
+        $routesFile = BASE_PATH . '/routes/web.php';
+        $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
+
+        $cachedData = Cache::get($this->cacheKey);
+        $cachedTime = Cache::get($this->cacheKey . '_time');
+
+        if (is_array($cachedData) && $cachedTime && $cachedTime == $lastModified) {
+            $this->routes = $cachedData;
+        } else {
+            Cache::delete($this->cacheKey);
+            Cache::delete($this->cacheKey . '_time');
+
+            if (file_exists($routesFile)) {
+                // 🔹 Nạp file web.php
+                $router = $this;
+                require $routesFile;
+                // 🔹 Lưu cache mới
+                $this->saveCache();
+            }
+        }
     }
 
-    /**
-     * Đăng ký GET route
-     */
+
     public function get($path, $callback) {
-        $this->addRoute('GET', $path, $callback);
+        $this->routes['GET'][$this->normalize($path)] = $callback;
     }
 
-    /**
-     * Đăng ký POST route
-     */
     public function post($path, $callback) {
-        $this->addRoute('POST', $path, $callback);
+        $this->routes['POST'][$this->normalize($path)] = $callback;
     }
 
-    /**
-     * Thêm route vào danh sách
-     */
-    private function addRoute($method, $path, $callback) {
-        $this->routes[] = [
-            'method' => strtoupper($method),
-            'path' => $path,
-            'callback' => $callback,
-            'middleware' => $this->currentMiddleware
-        ];
-
-        // reset middleware để không áp dụng cho route tiếp theo
-        $this->currentMiddleware = null;
+    public function put($path, $callback) {
+        $this->routes['PUT'][$this->normalize($path)] = $callback;
     }
 
-    /**
-     * Dispatch router
-     */
+    public function delete($path, $callback) {
+        $this->routes['DELETE'][$this->normalize($path)] = $callback;
+    }
+
+    public function setNotFound($callback) {
+        $this->notFound = $callback;
+    }
+
+    private function normalize($path) {
+        return '/' . trim($path, '/');
+    }
+
     public function dispatch() {
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $uri = rtrim($uri, '/'); // loại bỏ dấu / cuối
-        if ($uri === '') $uri = '/';
-
         $method = $_SERVER['REQUEST_METHOD'];
+        $path = $this->normalize(str_replace(dirname($_SERVER['SCRIPT_NAME']), '', $uri));
 
-        foreach ($this->routes as $route) {
-            if ($route['method'] === $method && $route['path'] === $uri) {
-                // ✅ Xử lý middleware
-                if (!empty($route['middleware'])) {
-                    if (!class_exists($route['middleware'])) {
-                        throw new Exception("Middleware {$route['middleware']} không tồn tại.");
-                    }
+        if (!isset($this->routes[$method])) {
+            echo json_encode(['error' => 'Cấu hình route không hợp lệ (method)']);
+            return;
+        }
 
-                    $middlewareClass = $route['middleware'];
-                    $middleware = new $middlewareClass();
-                    $middleware->handle();
-                }
-
-                // ✅ Gọi Controller hoặc Callback
-                if (is_callable($route['callback'])) {
-                    return call_user_func($route['callback']);
-                }
-
-                if (is_string($route['callback'])) {
-                    list($controllerName, $actionName) = explode('@', $route['callback']);
-                    $controllerFile = BASE_PATH . '/app/Controllers/' . $controllerName . '.php';
-
-                    if (!file_exists($controllerFile)) {
-                        throw new Exception("Không tìm thấy controller: $controllerFile");
-                    }
-
-                    require_once $controllerFile;
-                    $controller = new $controllerName();
-
-                    if (!method_exists($controller, $actionName)) {
-                        throw new Exception("Không tồn tại action '$actionName' trong controller '$controllerName'");
-                    }
-
-                    return call_user_func([$controller, $actionName]);
+        foreach ($this->routes[$method] as $route => $callback) {
+            if ($route === $path) {
+                if (is_callable($callback)) {
+                    call_user_func($callback);
+                    return;
+                } elseif (is_string($callback)) {
+                    $this->callController($callback);
+                    return;
                 }
             }
         }
 
-        // ❌ Không tìm thấy route
-        http_response_code(404);
-        echo json_encode([
-            'status' => 'error',
-            'message' => "Không tìm thấy route tương ứng với $method $uri"
-        ]);
+        // Nếu không có route khớp
+        echo json_encode(['error' => 'Không tìm thấy route tương ứng']);
+    }
+
+    private function callController($callback) {
+        list($controllerName, $methodName) = explode('@', $callback);
+        $controllerFile = BASE_PATH . '/app/controllers/' . $controllerName . '.php';
+
+        if (!file_exists($controllerFile)) {
+            echo json_encode(['error' => "Không tìm thấy controller: $controllerName"]);
+            return;
+        }
+
+        require_once $controllerFile;
+        if (!class_exists($controllerName)) {
+            echo json_encode(['error' => "Không tồn tại lớp: $controllerName"]);
+            return;
+        }
+
+        $controller = new $controllerName();
+        if (!method_exists($controller, $methodName)) {
+            echo json_encode(['error' => "Không tồn tại phương thức: $methodName"]);
+            return;
+        }
+
+        call_user_func([$controller, $methodName]);
+    }
+
+    public function saveCache() {
+        $routesFile = BASE_PATH . '/routes/web.php';
+        $lastModified = file_exists($routesFile) ? filemtime($routesFile) : 0;
+
+        Cache::set($this->cacheKey, $this->routes, $this->cacheTime);
+        Cache::set($this->cacheKey . '_time', $lastModified, $this->cacheTime);
+    }
+
+    public function clearCache() {
+        Cache::delete($this->cacheKey);
+        Cache::delete($this->cacheKey . '_time');
     }
 }

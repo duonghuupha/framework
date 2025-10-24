@@ -66,32 +66,11 @@ class AuthController extends Controller{
 
     // GET /info
     public function info(){
-        $token = $this->getBearerToken();
-        if (!$token) return $this->json([], 'error', 'Thiếu token', 401);
-
-        $payload = JWTHelper::validate($token);
-        if (!$payload) return $this->json([], 'error', 'Token không hợp lệ hoặc đã hết hạn', 401);
-
+        $payload = $this->checkToken();
         // Lấy user từ model
         $user = $this->userModel->getUserById($payload['user_id']);
         if (!$user) return $this->json([], 'error', 'Không tìm thấy người dùng', 404);
 
         return $this->json(['user' => $user], 'success', '', 200);
-    }
-
-    // helper lấy Bearer token từ header
-    protected function getBearerToken(){
-        if (function_exists('getallheaders')) {
-            $headers = getallheaders();
-            $auth = $headers['Authorization'] ?? ($headers['authorization'] ?? null);
-        } else {
-            $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null);
-        }
-
-        if (!$auth) return null;
-        if (stripos($auth, 'Bearer ') === 0) {
-            return trim(substr($auth, 7));
-        }
-        return null;
     }
 }
