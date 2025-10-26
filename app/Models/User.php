@@ -1,7 +1,7 @@
 <?php
 class User extends Model{
-    protected static $table = 'tbl_user';
-    protected static $primaryKey = 'id';
+    protected static string $table = 'tbl_user';
+    protected static string $primaryKey = 'id';
     
     public static function getUserByUsername($username){
         $users = self::where('username', $username);

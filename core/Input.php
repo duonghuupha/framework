@@ -1,50 +1,33 @@
-<?
-class Input{
-    private static $data = null;
+<?php
+class Input {
+    private static array $data = [];
 
-    // Nạp dữ liệu từ request chỉ 1 lần
-    private static function load(){
-        if (self::$data !== null) {
-            return;
-        }
-
-        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-        $rawData = file_get_contents('php://input');
-
-        // Nếu là JSON (application/json)
-        if (stripos($contentType, 'application/json') !== false) {
-            $json = json_decode($rawData, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                self::$data = $json;
-            } else {
-                self::$data = [];
-            }
-        } else {
-            // Nếu là form thường hoặc query string
-            self::$data = array_merge($_GET, $_POST);
-        }
-    }
-
-    // Lấy giá trị theo key
-    public static function get($key, $default = null){
-        self::load();
-        return self::$data[$key] ?? $default;
-    }
-
-    // Lấy toàn bộ dữ liệu
-    public static function all(){
-        self::load();
+    public static function all(): array {
+        if (empty(self::$data)) self::parse();
         return self::$data;
     }
 
-    // Lấy file upload
-    public static function file($key){
-        return $_FILES[$key] ?? null;
+    public static function get(string $key, $default = null) {
+        if (empty(self::$data)) self::parse();
+        return self::$data[$key] ?? $default;
     }
 
-    // Kiểm tra tồn tại key
-    public static function has($key){
-        self::load();
-        return isset(self::$data[$key]);
+    private static function parse(): void {
+        // Bắt đầu với GET + POST
+        self::$data = array_merge($_GET ?? [], $_POST ?? []);
+
+        // Thêm JSON body nếu có
+        $raw = file_get_contents('php://input');
+        if ($raw) {
+            $json = json_decode($raw, true);
+            if (is_array($json)) {
+                self::$data = array_merge(self::$data, $json);
+            }
+        }
+
+        // Thêm file upload
+        if (!empty($_FILES)) {
+            self::$data['_files'] = $_FILES;
+        }
     }
 }
