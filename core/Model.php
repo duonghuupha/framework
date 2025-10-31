@@ -83,7 +83,7 @@ class Model{
         $sql = "INSERT INTO " . static::$table . " ($fields) VALUES ($placeholders)";
         $stmt = self::execQuery($sql, array_values($data));
 
-        Cache::forgetPrefix('table_all_' . static::$table);
+        Cache::clearByPrefix('table_all_' . static::$table);
         return (int) self::getDB()->lastInsertId();
     }
 
@@ -97,8 +97,8 @@ class Model{
         $params = [...array_values($data), $id];
         self::execQuery($sql, $params);
 
-        Cache::forget('record_' . static::$table . '_' . $id);
-        Cache::forgetPrefix('table_all_' . static::$table);
+        //Cache::forget('record_' . static::$table . '_' . $id);
+        Cache::clearByPrefix('table_all_' . static::$table);
         return true;
     }
 
@@ -109,8 +109,8 @@ class Model{
         $sql = "DELETE FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
         self::execQuery($sql, [$id]);
 
-        Cache::forget('record_' . static::$table . '_' . $id);
-        Cache::forgetPrefix('table_all_' . static::$table);
+        //Cache::forget('record_' . static::$table . '_' . $id);
+        Cache::clearByPrefix('table_all_' . static::$table);
         return true;
     }
 

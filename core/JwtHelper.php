@@ -1,13 +1,13 @@
 <?php
 class JWTHelper {
     protected static function secret(): string {
-        $s = getenv('JWT_SECRET');
+        $s = Config::get('JWT_SECRET');
         if (!$s) $s = 'change_this_secret_immediately';
         return $s;
     }
 
     public static function ttl(): int {
-        $t = getenv('JWT_TTL');
+        $t = Config::get('JWT_TTL');
         return $t ? (int)$t : 3600;
     }
 
