@@ -1,6 +1,6 @@
 <?php
 class User extends Model{
-    protected static string $table = 'tbl_user';
+    protected static string $table = 'tbl_users';
     protected static string $primaryKey = 'id';
     
     public static function getUserByUsername($username){

@@ -17,10 +17,17 @@ class AuthController extends Controller{
         }
         // Goi model de kiem tra
         $user = $this->userModel->getUserByUsername($username);
-        if(!$user && !password_verify($password, $user['password'])){
+        if(!$user){
             return $this->json([
                 'status' => 'error',
-                'message' => 'Tên đăng nhập hoặc mật khẩu không đúng.'
+                'message' => 'Tên đăng nhập không đúng.'
+            ]);
+        }
+
+        if(!password_verify($password, $user['password'])){
+            return $this->json([
+                'status' => 'error',
+                'message' => "Mật khẩu không đúng."
             ]);
         }
 
@@ -35,8 +42,7 @@ class AuthController extends Controller{
             'expires_in' => JWTHelper::ttl(),
             'user' => [
                 'id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email']
+                'username' => $user['username']
             ]
         ];
         return $this->json([

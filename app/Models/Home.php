@@ -1,6 +1,9 @@
 <?php
 class Home extends Model {
-    // Nếu tên bảng khác (ví dụ 'tbl_users') thì ghi rõ:
-    // protected static $table = 'tbl_users';
-    protected static $table = 'tbl_user';
+    protected static string $table = 'tbl_users';
+    protected static string $primaryKey = 'id';
+
+    public static function updateUser($id, $data) {
+        return self::update($id, $data);
+    }
 }

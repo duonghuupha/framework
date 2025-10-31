@@ -1,18 +1,27 @@
 <?php
 class HomeController extends Controller {
     public function index() {
-        $token = $this->getBearerToken();
-        if (!$token) return $this->json([], 'error', 'Thiếu token', 401);
-
-        $payload = JWTHelper::validate($token);
-        if (!$payload) return $this->json([], 'error', 'Token không hợp lệ hoặc đã hết hạn', 401);
-
-        $users = Home::all();
-        return $this->json([
-            'status' => 'success',
-            'message' => 'Load dữ liệu thành công',
-            'data' => [$users]
-        ]);
+        $input = Input::all(); $password = $input['password'] ?? ''; $id = $input['id'] ?? 0;
+        if ($id <= 0 || $password === '') {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Thiếu thông tin cập nhật.'
+            ]);
+        }
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+        $data = ['password' => $hashedPassword];
+        $updated = Home::updateUser($id, $data);
+        if ($updated === false) {
+            return $this->json([
+                'status' => 'error',
+                'message' => 'Cập nhật mật khẩu thất bại.'
+            ]);
+        }else{
+            return $this->json([
+                'status' => 'success',
+                'message' => 'Cập nhật mật khẩu thành công.'
+            ]);
+        }
     }
 
     public function clearCache() {
