@@ -40,10 +40,8 @@ class AuthController extends Controller{
         $data =[
             'token' => $token,
             'expires_in' => JWTHelper::ttl(),
-            'user' => [
-                'id' => $user['id'],
-                'username' => $user['username']
-            ]
+            'user_id' => $user['id'],
+            'username' => $user['username']
         ];
         return $this->json([
             'status' => "success",
