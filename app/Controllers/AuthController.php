@@ -10,32 +10,20 @@ class AuthController extends Controller{
     public function login(){
         $input = Input::all(); $username = trim($input['username'] ?? ''); $password = $input['password'] ?? '';
         if ($username === '' || $password === '') {
-            return $this->json([
-                'status' => 'error',
-                'message' => 'Thiếu thông tin đăng nhập.'
-            ]);
+            return $this->json([], 'error', "Thiếu thông tin đăng nhập", 400);
         }
         // Goi model de kiem tra
         $user = $this->userModel->getUserByUsername($username);
         if(!$user){
-            return $this->json([
-                'status' => 'error',
-                'message' => 'Tên đăng nhập không đúng.'
-            ]);
+            return $this->json([], 'error', "Tên đăng nhập không đúng.", 400);
         }
 
         if(!password_verify($password, $user['password'])){
-            return $this->json([
-                'status' => 'error',
-                'message' => "Mật khẩu không đúng."
-            ]);
+            return $this->json([], 'error', "Mật khẩu không đúng.", 400);
         }
 
         // Sinh JWT va luu vao cache (JWTHelper::issueAndStore tu luu)
-        $payload = [
-            'user_id' => $user['id'],
-            'username' => $user['username']
-        ];
+        $payload = ['user_id' => $user['id'], 'username' => $user['username']];
         $token = JWTHelper::issueAndStore($payload); // dung TTL mac dinh
         $data =[
             'token' => $token,
@@ -43,11 +31,7 @@ class AuthController extends Controller{
             'user_id' => $user['id'],
             'username' => $user['username']
         ];
-        return $this->json([
-            'status' => "success",
-            'message' => "Đăng nhập thành công",
-            'data' => $data
-        ]);
+        return $this->json($data, 'success', 'Đăng nhập thành công', 200);
     }
 
     // POST /logout
