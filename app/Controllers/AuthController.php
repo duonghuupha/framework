@@ -37,6 +37,7 @@ class AuthController extends Controller{
     // POST /logout
     public function logout(){
         $token = $this->getBearerToken();
+        //return $this->json([], 'error', $token, 400);
         if (!$token) {
             return $this->json([], 'error', 'Thiếu token', 400);
         }
