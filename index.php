@@ -1,4 +1,9 @@
 <?php
+// Cho phép mọi domain truy cập (không nên dùng trong production)
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
 // Bật hiển thị lỗi (debug)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
