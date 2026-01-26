@@ -29,7 +29,8 @@ class AuthController extends Controller{
             'token' => $token,
             'expires_in' => JWTHelper::ttl(),
             'user_id' => $user['id'],
-            'username' => $user['username']
+            'username' => $user['username'],
+            'fullname' => $user['fullname'] ?? '',
         ];
         return $this->json($data, 'success', 'Đăng nhập thành công', 200);
     }

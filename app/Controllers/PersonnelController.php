@@ -16,7 +16,7 @@ class PersonnelController extends Controller{
                 'code' => $input['search']['code'] ?? ''
             ],
             'filters' => [
-                'status' => $input['filters']['status'] ?? 1
+                'active' => $input['filters']['active'] ?? 1
             ],
             'order' => [
                 'id' => $input['id'] ?? ''
