@@ -32,7 +32,7 @@ class AuthController extends Controller{
             'username' => $user['username'],
             'fullname' => $user['fullname'] ?? '',
             'roles' => ["ADMIN"],
-            'permissions' => ["dashboard", "products.view", "products.create", "products.edit", "products.delete", "user.view"],
+            'permissions' => ["dashboard", "products.view", "products.create", "products.edit", "products.delete"],
         ];
         return $this->json($data, 'success', 'Đăng nhập thành công', 200);
     }
