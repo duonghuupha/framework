@@ -12,14 +12,11 @@ class ProductsController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'name' => $input['search']['name'] ?? '',
+                'title' => $input['search']['name'] ?? '',
                 'code' => $input['search']['code'] ?? ''
             ],
-            'filters' => [
-                'active' => $input['filters']['active'] ?? 1
-            ],
             'order' => [
-                'id' => $input['id'] ?? ''
+                'title' => 'ASC'
             ]
         ];
         $result = $this->productsModel->listProducts($params);
