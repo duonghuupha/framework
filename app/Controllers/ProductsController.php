@@ -22,5 +22,24 @@ class ProductsController extends Controller{
         $result = $this->productsModel->listProducts($params);
         return $this->json($result);
     }
+
+    function add(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $data = [
+            'code' => $input['code'] ?? '',
+            'title' => $input['title'] ?? '',
+            'donvitinh_id' => $input['donvitinh_id'] ?? 0,
+            'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
+            'imp_price' => $input['imp_price'] ?? 0,
+            'exp_price' => $input['exp_price'] ?? 0,
+            'stock' => $input['stock'] ?? 0,
+            'is_vacxin' => $input['is_vacxin'] ?? 0,
+            'active' => 1,
+            'image' => ''
+        ];
+        $newProductId = $this->productsModel->addProduct($data);
+        return $this->json(['new_product_id' => $newProductId]);
+    }
 }
 ?>

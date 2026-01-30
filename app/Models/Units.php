@@ -6,6 +6,8 @@ class Units extends Model{
         return self::paginate(static::$table, $params);
     }
 
-    public static function listCombo($)
+    public static function listCombo() : array{
+        return self::all();
+    }
 }
 ?>
