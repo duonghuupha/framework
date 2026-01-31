@@ -7,8 +7,16 @@ class Products extends Model{
         return self::paginate(static::$view_product, $params);
     }
 
-    public static function addProduct(array $data) : int{
-        return self::insert(static::$table, $data);
+    public static function addProduct(array $data) : int|false{
+        return self::insert($data);
+    }
+
+    public static function updateProduct(int $id, array $data) : int|false{
+        return self::update($id, $data);
+    }
+
+    public static function deleteProduct(int $id) : int|false{
+        return self::delete($id);
     }
 }
 ?>

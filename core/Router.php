@@ -62,7 +62,7 @@ class Router {
             return;
         }
 
-        foreach ($this->routes[$method] as $route => $callback) {
+        /*foreach ($this->routes[$method] as $route => $callback) {
             if ($route === $path) {
                 if (is_callable($callback)) {
                     call_user_func($callback);
@@ -72,13 +72,29 @@ class Router {
                     return;
                 }
             }
+        }*/
+        foreach ($this->routes[$method] as $route => $callback) {
+            $pattern = preg_replace('#\{[^/]+\}#', '([^/]+)', $route);
+            $pattern = "#^" . $pattern . "$#";
+
+            if(preg_match($pattern, $path, $matches)) {
+                array_shift($matches); // Loại bỏ phần tử đầu tiên (toàn bộ chuỗi khớp)
+
+                if (is_callable($callback)) {
+                    call_user_func_array($callback, $matches);
+                    return;
+                } elseif (is_string($callback)) {
+                    $this->callController($callback, $matches);
+                    return;
+                }
+            }
         }
 
         // Nếu không có route khớp
         echo json_encode(['error' => 'Không tìm thấy route tương ứng']);
     }
 
-    private function callController($callback) {
+    private function callController($callback,  $params = []) {
         list($controllerName, $methodName) = explode('@', $callback);
         $controllerFile = BASE_PATH . '/app/controllers/' . $controllerName . '.php';
 
@@ -99,7 +115,7 @@ class Router {
             return;
         }
 
-        call_user_func([$controller, $methodName]);
+        call_user_func_array([$controller, $methodName], $params);
     }
 
     public function saveCache() {

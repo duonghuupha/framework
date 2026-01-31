@@ -16,7 +16,7 @@ class ProductsController extends Controller{
                 'code' => $input['search']['code'] ?? ''
             ],
             'order' => [
-                'title' => 'ASC'
+                'id' => 'DESC'
             ]
         ];
         $result = $this->productsModel->listProducts($params);
@@ -40,6 +40,30 @@ class ProductsController extends Controller{
         ];
         $newProductId = $this->productsModel->addProduct($data);
         return $this->json(['new_product_id' => $newProductId]);
+    }
+
+    function update($id){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $data = [
+            'code' => $input['code'] ?? '',
+            'title' => $input['title'] ?? '',
+            'donvitinh_id' => $input['donvitinh_id'] ?? 0,
+            'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
+            'imp_price' => $input['imp_price'] ?? 0,
+            'exp_price' => $input['exp_price'] ?? 0,
+            'stock' => $input['stock'] ?? 0,
+            'is_vacxin' => $input['is_vacxin'] ?? 0,
+            'image' => ''
+        ];
+        $updated = $this->productsModel->updateProduct((int)$id, $data);
+        return $this->json(['updated' => $updated]);
+    }
+
+    function delete($id){
+        $payload = $this->checkToken();
+        $deleted = $this->productsModel->deleteProduct((int)$id);
+        return $this->json(['deleted' => $deleted]);
     }
 }
 ?>
