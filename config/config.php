@@ -12,8 +12,8 @@ return [
     'database' => [
         'host' => 'localhost',
         'dbname' => 'edusoft',
-        'username' => 'root',
-        'password' => '',
+        'username' => 'admin',
+        'password' => '123456',
         'charset' => 'utf8mb4',
     ],
 

@@ -13,9 +13,9 @@ define('BASE_PATH', __DIR__);
 // Nạp autoload
 require_once __DIR__ . '/core/Autoload.php';
 
-require_once __DIR__ . '/Core/Config.php';
-require_once __DIR__ . '/Core/Cache.php';
-require_once __DIR__ . '/Core/Database.php';
+require_once __DIR__ . '/core/Config.php';
+require_once __DIR__ . '/core/Cache.php';
+require_once __DIR__ . '/core/Database.php';
 
 // Nạp cấu hình .env
 Config::load(__DIR__ . '/.env');

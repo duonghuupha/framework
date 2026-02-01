@@ -3,6 +3,7 @@ class Router {
     private $routes = [];
     private $cacheKey = 'router_cache';
     private $cacheTime = 3600; // 1 giờ
+    private $notFound;
 
     public function __construct() {
         $routesFile = BASE_PATH . '/routes/web.php';
@@ -96,7 +97,7 @@ class Router {
 
     private function callController($callback,  $params = []) {
         list($controllerName, $methodName) = explode('@', $callback);
-        $controllerFile = BASE_PATH . '/app/controllers/' . $controllerName . '.php';
+        $controllerFile = BASE_PATH . '/app/Controllers/' . $controllerName . '.php';
 
         if (!file_exists($controllerFile)) {
             echo json_encode(['error' => "Không tìm thấy controller: $controllerName"]);
