@@ -26,38 +26,46 @@ class ProductsController extends Controller{
     function add(){
         $payload = $this->checkToken();
         $input = Input::all();
-        $data = [
-            'code' => $input['code'] ?? '',
-            'title' => $input['title'] ?? '',
-            'donvitinh_id' => $input['donvitinh_id'] ?? 0,
-            'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
-            'imp_price' => $input['imp_price'] ?? 0,
-            'exp_price' => $input['exp_price'] ?? 0,
-            'stock' => $input['stock'] ?? 0,
-            'is_vacxin' => $input['is_vacxin'] ?? 0,
-            'active' => 1,
-            'image' => ''
-        ];
-        $newProductId = $this->productsModel->addProduct($data);
-        return $this->json(['new_product_id' => $newProductId]);
+        if(count($this->productsModel->dupliObjProduct($input['code'])) > 0){
+            return $this->json([], 'error', 'Mã sản phẩm đã tồn tại');
+        }else{
+            $data = [
+                'code' => $input['code'] ?? '',
+                'title' => $input['title'] ?? '',
+                'donvitinh_id' => $input['donvitinh_id'] ?? 0,
+                'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
+                'imp_price' => $input['imp_price'] ?? 0,
+                'exp_price' => $input['exp_price'] ?? 0,
+                'stock' => $input['stock'] ?? 0,
+                'is_vacxin' => $input['is_vacxin'] ?? 0,
+                'active' => 1,
+                'image' => ''
+            ];
+            $newProductId = $this->productsModel->addProduct($data);
+            return $this->json(['new_product_id' => $newProductId]);
+        }
     }
 
     function update($id){
         $payload = $this->checkToken();
         $input = Input::all();
-        $data = [
-            'code' => $input['code'] ?? '',
-            'title' => $input['title'] ?? '',
-            'donvitinh_id' => $input['donvitinh_id'] ?? 0,
-            'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
-            'imp_price' => $input['imp_price'] ?? 0,
-            'exp_price' => $input['exp_price'] ?? 0,
-            'stock' => $input['stock'] ?? 0,
-            'is_vacxin' => $input['is_vacxin'] ?? 0,
-            'image' => ''
-        ];
-        $updated = $this->productsModel->updateProduct((int)$id, $data);
-        return $this->json(['updated' => $updated]);
+         if(count($this->productsModel->dupliObjProduct($input['code'])) > 0){
+            return $this->json([], 'error', 'Mã sản phẩm đã tồn tại');
+        }else{
+            $data = [
+                'code' => $input['code'] ?? '',
+                'title' => $input['title'] ?? '',
+                'donvitinh_id' => $input['donvitinh_id'] ?? 0,
+                'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
+                'imp_price' => $input['imp_price'] ?? 0,
+                'exp_price' => $input['exp_price'] ?? 0,
+                'stock' => $input['stock'] ?? 0,
+                'is_vacxin' => $input['is_vacxin'] ?? 0,
+                'image' => ''
+            ];
+            $updated = $this->productsModel->updateProduct((int)$id, $data);
+            return $this->json(['updated' => $updated]);
+        }
     }
 
     function delete($id){

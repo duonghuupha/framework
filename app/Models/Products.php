@@ -7,6 +7,10 @@ class Products extends Model{
         return self::paginate(static::$view_product, $params);
     }
 
+    public static function dupliObjProduct($code) : array|false{
+        return self::where("code", $code);
+    }
+
     public static function addProduct(array $data) : int|false{
         return self::insert($data);
     }
