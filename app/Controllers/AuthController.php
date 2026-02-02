@@ -10,16 +10,16 @@ class AuthController extends Controller{
     public function login(){
         $input = Input::all(); $username = trim($input['username'] ?? ''); $password = $input['password'] ?? '';
         if ($username === '' || $password === '') {
-            return $this->json([], 'error', "Thiếu thông tin đăng nhập", 400);
+            return $this->json([], 'error', "Thiếu thông tin đăng nhập", 200);
         }
         // Goi model de kiem tra
         $user = $this->userModel->getUserByUsername($username);
         if(!$user){
-            return $this->json([], 'error', "Tên đăng nhập không đúng.", 400);
+            return $this->json([], 'error', "Tên đăng nhập không đúng.", 200);
         }
 
         if(!password_verify($password, $user['password'])){
-            return $this->json([], 'error', "Mật khẩu không đúng.", 400);
+            return $this->json([], 'error', "Mật khẩu không đúng.", 200);
         }
 
         // Sinh JWT va luu vao cache (JWTHelper::issueAndStore tu luu)
@@ -29,7 +29,10 @@ class AuthController extends Controller{
             'token' => $token,
             'expires_in' => JWTHelper::ttl(),
             'user_id' => $user['id'],
-            'username' => $user['username']
+            'username' => $user['username'],
+            'fullname' => $user['fullname'] ?? '',
+            'roles' => ["ADMIN"],
+            'permissions' => ["dashboard", "products.view", "products.create", "products.edit", "products.delete"],
         ];
         return $this->json($data, 'success', 'Đăng nhập thành công', 200);
     }
@@ -37,8 +40,9 @@ class AuthController extends Controller{
     // POST /logout
     public function logout(){
         $token = $this->getBearerToken();
+        //return $this->json([], 'error', $token, 400);
         if (!$token) {
-            return $this->json([], 'error', 'Thiếu token', 400);
+            return $this->json([], 'error', 'Thiếu token', 200);
         }
 
         $payload = JWTHelper::decode($token);

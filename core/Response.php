@@ -2,6 +2,10 @@
 class Response{
     private static bool $debug = true; // false khi đưa lên production
     private static function output($status, $message, $code, $data){
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+        
         http_response_code($code);
         $options = JSON_UNESCAPED_UNICODE;
         if (self::$debug) {
