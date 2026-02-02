@@ -26,7 +26,8 @@ class ProductsController extends Controller{
     function add(){
         $payload = $this->checkToken();
         $input = Input::all();
-        if(count($this->productsModel->dupliObjProduct($input['code'])) > 0){
+        return $this->json(['record' => $this->productsModel->dupliObjProduct($input['code'], 0)], 'error', 'Mã sản phẩm đã tồn tại');
+        /*if(count($this->productsModel->dupliObjProduct($input['code'], 0)) > 0){
             return $this->json([], 'error', 'Mã sản phẩm đã tồn tại');
         }else{
             $data = [
@@ -42,14 +43,15 @@ class ProductsController extends Controller{
                 'image' => ''
             ];
             $newProductId = $this->productsModel->addProduct($data);
-            return $this->json(['new_product_id' => $newProductId]);
+            return $this->json(['new_product_id' => $newProductId]);*/
+
         }
     }
 
     function update($id){
         $payload = $this->checkToken();
         $input = Input::all();
-         if(count($this->productsModel->dupliObjProduct($input['code'])) > 0){
+         if(count($this->productsModel->dupliObjProduct($input['code'], (int)$id)) > 0){
             return $this->json([], 'error', 'Mã sản phẩm đã tồn tại');
         }else{
             $data = [

@@ -7,8 +7,16 @@ class Products extends Model{
         return self::paginate(static::$view_product, $params);
     }
 
-    public static function dupliObjProduct($code) : array|false{
-        return self::where("code", $code);
+    public static function dupliObjProduct($code, $id) : array|false{
+        /*if($id === 0){
+            return self::where("code", $code);
+        }else{
+            $sql = "SELECT * FROM " . static::$table . " WHERE code = ? AND id != ?";
+            $params = [$code, $id];
+            return self::dynamicQuery($sql, $params);
+        }*/
+        return "SELECT * FROM " . static::$table . " WHERE code = ? AND id != ?";
+        
     }
 
     public static function addProduct(array $data) : int|false{
