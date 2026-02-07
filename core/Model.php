@@ -15,7 +15,7 @@ class Model{
         return Database::getInstance()->getConnection();
     }
 
-    protected static function getTableCacheVertion() : int{
+    protected static function getTableCacheVersion() : int{
         $key = static::$table . '_cache_version';
         return Cache::remember($key, function() {
             return time();
@@ -41,7 +41,7 @@ class Model{
      * Lấy toàn bộ dữ liệu (có cache)
      */
     public static function all(): array{
-        $version = self::getTableCacheVertion();
+        $version = self::getTableCacheVersion();
         $cacheKey = 'table_all_' . static::$table . '_v' . $version;
         return Cache::remember($cacheKey, function () {
             $stmt = self::execQuery("SELECT * FROM " . static::$table);
@@ -53,7 +53,7 @@ class Model{
      * Tìm 1 bản ghi theo id
      */
     public static function find(int|string $id): ?array{
-        $version = self::getTableCacheVertion();
+        $version = self::getTableCacheVersion();
         $cacheKey = 'record_' . static::$table . '_' . $id . '_v' . $version;
         return Cache::remember($cacheKey, function () use ($id) {
             $sql = "SELECT * FROM " . static::$table . " WHERE " . static::$primaryKey . " = ?";
@@ -67,7 +67,7 @@ class Model{
      * Tìm theo điều kiện đơn giản (column = value)
      */
     public static function where(string $column, mixed $value): array{
-        $version = self::getTableCacheVertion();
+        $version = self::getTableCacheVersion();
         $cacheKey = 'where_' . static::$table . '_' . $column . '_' . md5($value) . '_v' . $version;
         return Cache::remember($cacheKey, function () use ($column, $value) {
             $sql = "SELECT * FROM " . static::$table . " WHERE {$column} = ?";
@@ -80,7 +80,7 @@ class Model{
      * Truy vấn phức tạp, có cache TTL (giây)
      */
     public static function dynamicQuery(string $sql, array $params = [], int $ttl = 30): array{
-        $version = self::getTableCacheVertion();
+        $version = self::getTableCacheVersion();
         $cacheKey = 'dynamic_' . md5($sql . json_encode($params)) . '_v' . $version;
         return Cache::remember($cacheKey, $ttl, function () use ($sql, $params) {
             $stmt = self::execQuery($sql, $params);
@@ -158,9 +158,8 @@ class Model{
             }
             $orderSQL = " ORDER BY " . implode(', ', $orderParts);
         }
-
         // ✅ Tạo key cache duy nhất dựa trên điều kiện
-        $version = self::getTableCacheVertion();
+        $version = self::getTableCacheVersion();
         $cacheKey = sprintf(
             "paginate_%s_%s",
             $table,
@@ -193,8 +192,7 @@ class Model{
                     'total' => $total,
                     'total_pages' => ceil($total / $limit)
                 ],
-                'rows' => $data,
-                'sql' => $search
+                'rows' => $data
             ];
         });
     }

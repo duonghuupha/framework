@@ -12,9 +12,9 @@ class ProductsController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'title' => $input['search']['name'] ?? '',
-                'code' => $input['search']['code'] ?? ''
+                'title' => $input['search']['name'] ?? ''
             ],
+            'filters' => [],
             'order' => [
                 'id' => 'DESC'
             ]
