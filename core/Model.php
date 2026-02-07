@@ -193,7 +193,8 @@ class Model{
                     'total' => $total,
                     'total_pages' => ceil($total / $limit)
                 ],
-                'rows' => $data
+                'rows' => $data,
+                'sql' => $search
             ];
         });
     }
