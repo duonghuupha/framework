@@ -161,7 +161,7 @@ class Model{
         // ✅ Tạo key cache duy nhất dựa trên điều kiện
         $version = self::getTableCacheVersion();
         $cacheKey = sprintf(
-            "paginate_%s_%s",
+            "paginate_%s_%s_%s",
             $table,
             $version,
             md5(json_encode([
