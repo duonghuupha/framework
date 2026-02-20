@@ -221,7 +221,7 @@ class Model{
             $params[] = '%' . $val . '%';
         }
 
-        $whereSQL = !empty($conditions) ? 'WHERE ' . implode(' AND ', $conditions) : '';
+        $whereSQL = !empty($conditions) ? 'WHERE ' . implode(' OR ', $conditions) : '';
         return [$whereSQL, $params];
     }
 }
