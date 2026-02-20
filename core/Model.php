@@ -190,7 +190,7 @@ class Model{
                     'page' => $page,
                     'limit' => $limit,
                     'total' => $total,
-                    'total_pages' => ceil($total / $limit)
+                    'total_pages' => ceil($total / $limit) 
                 ],
                 'rows' => $data
             ];
