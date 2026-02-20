@@ -8,6 +8,8 @@ $router->post('/products', 'ProductsController@add');
 $router->put('/products/{id}', 'ProductsController@update');
 $router->delete('/products/{id}', 'ProductsController@delete');
 
+$router->get('/customer', 'CustomerController@index');
+
 $router->get('/units/combo', 'UnitsController@combo');
 
 $router->get('/categories/combo', 'CategoriesController@combo');
