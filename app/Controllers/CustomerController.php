@@ -42,10 +42,10 @@ class CustomerController extends Controller{
         }
     }
 
-    function update(){
+    function update($id){
         $payload = $this->checkToken();
         $input = Input::all();
-         if(count($this->customerModel->dupliObjCustomer($input['code'], (int)$id)) > 0){
+        if(count($this->customerModel->dupliObjCustomer($input['code'], (int)$id)) > 0){
             return $this->json([], 'error', 'Mã khách hàng đã tồn tại');
         }else{
             $data = [
@@ -60,7 +60,7 @@ class CustomerController extends Controller{
         }
     }
 
-    function delete(){
+    function delete($id){
         $payload = $this->checkToken();
         $deleted = $this->customerModel->deleteCustomer((int)$id);
         return $this->json(['deleted' => $deleted]);

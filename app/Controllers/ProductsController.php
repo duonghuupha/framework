@@ -49,7 +49,7 @@ class ProductsController extends Controller{
     function update($id){
         $payload = $this->checkToken();
         $input = Input::all();
-         if(count($this->productsModel->dupliObjProduct($input['code'], (int)$id)) > 0){
+        if(count($this->productsModel->dupliObjProduct($input['code'], (int)$id)) > 0){
             return $this->json([], 'error', 'Mã sản phẩm đã tồn tại');
         }else{
             $data = [
