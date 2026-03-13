@@ -73,5 +73,12 @@ class ProductsController extends Controller{
         $deleted = $this->productsModel->deleteProduct((int)$id);
         return $this->json(['deleted' => $deleted]);
     }
+
+    function combo(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $result = $this->productsModel->listComboProduct($input['search']['name']);
+        return $this->json($result);
+    }
 }
 ?>

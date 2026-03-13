@@ -12,9 +12,14 @@ $router->get('/customer', 'CustomerController@index');
 $router->post('/customer', 'CustomerController@add');
 $router->put('/customer/{id}', 'CustomerController@update');
 $router->delete('/customer/{id}', 'CustomerController@delete');
+/**Nhập kho */
+$router->get('/imports', 'ImportsController@index');
+$router->post('/imports', 'ImportsController@add');
 /**Combo dữ liệu */
 $router->get('/units/combo', 'UnitsController@combo');
 $router->get('/categories/combo', 'CategoriesController@combo');
+$router->get('/manufacturer/combo', 'ManufacturerController@combo');
+$router->get('/products/combo', 'ProductsController@combo');
 
 // Route test nhanh
 $router->setNotFound(function() {
