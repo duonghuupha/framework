@@ -104,6 +104,18 @@ class Model{
         return (int) self::getDB()->lastInsertId();
     }
 
+    public static function insertTo(string $table, array $data) : int|false{
+        $keys = array_keys($data);
+        $fields = implode(",", $keys);
+        $placeholders = implode(',', array_fill(0, count($keys), '?'));
+        
+        $sql = "INSERT INTO " . $table . "($fields) VALUES ($placeholders)";
+        $stmt = self::execQuery($sql, array_values($data));
+
+        self::bumpTableCacheVersion();
+        return (int) self::getDB()->lastInsertId();
+    }
+
     /**
      * Cập nhật bản ghi theo id
      */

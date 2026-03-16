@@ -30,7 +30,7 @@ class Products extends Model{
     }
 
     public static function listComboProduct($name) : array|false{
-        $sql = "SELECT id, code, title, exp_price, stock, (SELECT tbldm_donvitinh.title FROM tbldm_donvitinh WHERE tbldm_donvitinh.id = donvitinh_id) AS unit 
+        $sql = "SELECT id, code, title, imp_price, exp_price, stock, (SELECT tbldm_donvitinh.title FROM tbldm_donvitinh WHERE tbldm_donvitinh.id = donvitinh_id) AS unit 
                 FROM " . static::$table . " WHERE (code LIKE '%$name%' OR title LIKE '%$name%') AND active = 1";
         return self::dynamicQuery($sql);
     }

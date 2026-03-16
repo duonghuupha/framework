@@ -1,7 +1,7 @@
 <?php
 class Imports extends Model{
     protected static string $table = "tbl_imports"; //bảng nhập kho
-    protected static string $table_detail = "tbl_imports_deteail";
+    protected static string $table_detail = "tbl_imports_detail";
 
     public static function listImports(array $params = []) : array{
         return self::paginate(static::$table, $params);
@@ -15,6 +15,14 @@ class Imports extends Model{
             $params = [$code, $id];
             return self::dynamicQuery($sql, $params);
         }
+    }
+
+    public static function addImports(array $data) : int|false{
+        return self::insert($data);
+    }
+
+    public static function addImportsDetail(array $data) : int|false{
+        return self::insertTo(static::$table_detail, $data);
     }
 }
 ?>
