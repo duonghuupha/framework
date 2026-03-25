@@ -15,6 +15,9 @@ $router->delete('/customer/{id}', 'CustomerController@delete');
 /**Nhập kho */
 $router->get('/imports', 'ImportsController@index');
 $router->post('/imports', 'ImportsController@add');
+/**Bán hàng */
+$router->get('/sellers', 'SellersController@index');
+$router->post('/sellers', 'SellersController@add');
 /**Combo dữ liệu */
 $router->get('/units/combo', 'UnitsController@combo');
 $router->get('/categories/combo', 'CategoriesController@combo');
