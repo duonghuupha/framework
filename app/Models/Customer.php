@@ -27,5 +27,10 @@ class Customer extends Model{
     public static function deleteCustomer(int $id) : int|false{
         return self::delete($id);
     }
+
+    public static function listComboboCustomer($name) : array|false{
+        $sql = "SELECT id, code, title, address, phone FROM " . static::$table . " WHERE title LIKE '%$name%' OR phone LIKE '%$name%'";
+        return self::dynamicQuery($sql);
+    }
 }
 ?>

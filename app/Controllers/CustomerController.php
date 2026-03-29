@@ -65,5 +65,12 @@ class CustomerController extends Controller{
         $deleted = $this->customerModel->deleteCustomer((int)$id);
         return $this->json(['deleted' => $deleted]);
     }
+    
+    function combo(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $result = $this->customerModel->listComboboCustomer($input['search']['name']);
+        return $this->json($result);
+    }
 }
 ?>
