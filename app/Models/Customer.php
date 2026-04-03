@@ -28,9 +28,10 @@ class Customer extends Model{
         return self::delete($id);
     }
 
-    public static function listComboboCustomer($name) : array|false{
-        $sql = "SELECT id, code, title, address, phone FROM " . static::$table . " WHERE title LIKE '%$name%' OR phone LIKE '%$name%'";
-        return self::dynamicQuery($sql);
+    public static function listComboCustomer($name) : array|false{
+        $sql = "SELECT id, code, title, address, phone FROM " . static::$table . " WHERE title LIKE ? OR phone LIKE ?";
+        $params = ["%$name%", "%$name%"];
+        return self::dynamicQuery($sql, $params);
     }
 }
 ?>

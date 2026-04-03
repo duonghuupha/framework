@@ -69,7 +69,7 @@ class CustomerController extends Controller{
     function combo(){
         $payload = $this->checkToken();
         $input = Input::all();
-        $result = $this->customerModel->listComboboCustomer($input['search']['name']);
+        $result = $this->customerModel->listComboCustomer($input['search']['name']);
         return $this->json($result);
     }
 }
