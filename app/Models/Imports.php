@@ -1,14 +1,15 @@
 <?php
 class Imports extends Model{
-    protected static string $table = "tbl_imports"; //bảng nhập kho
-    protected static string $table_detail = "tbl_imports_detail";
+    protected static string $table = "imports"; //bảng nhập kho
+    protected static string $table_detail = "import_items"; //bảng nhập khi chi tiết
+    protected static string $view_import = "v_imports"; // view hiển thị danh sách nhập kho
 
     public static function listImports(array $params = []) : array{
-        return self::paginate(static::$table, $params);
+        return self::paginate(static::$view_import, $params);
     }
 
     public static function dupliObjImports($code, $id) : array|false{
-        if($id === 0){
+        if($id = 0){
             return self::where("code", $code);
         }else{
             $sql = "SELECT * FROM " . static::$table . " WHERE code = ? AND id != ?";

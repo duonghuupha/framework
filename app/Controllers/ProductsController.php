@@ -12,7 +12,7 @@ class ProductsController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'title' => $input['search']['name'] ?? ''
+                'name' => $input['search']['name'] ?? ''
             ],
             'filters' => [],
             'order' => [
@@ -31,15 +31,13 @@ class ProductsController extends Controller{
         }else{
             $data = [
                 'code' => $input['code'] ?? '',
-                'title' => $input['title'] ?? '',
-                'donvitinh_id' => $input['donvitinh_id'] ?? 0,
-                'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
-                'imp_price' => $input['imp_price'] ?? 0,
-                'exp_price' => $input['exp_price'] ?? 0,
+                'name' => $input['name'] ?? '',
+                'unit_id' => $input['unit_id'] ?? 0,
+                'category_id' => $input['category_id'] ?? 0,
+                'import_price' => $input['import_price'] ?? 0,
+                'sell_price' => $input['sell_price'] ?? 0,
                 'stock' => $input['stock'] ?? 0,
-                'is_vacxin' => $input['is_vacxin'] ?? 0,
-                'active' => 1,
-                'image' => ''
+                'is_active' => 1,
             ];
             $newProductId = $this->productsModel->addProduct($data);
             return $this->json(['new_product_id' => $data]);
@@ -54,14 +52,13 @@ class ProductsController extends Controller{
         }else{
             $data = [
                 'code' => $input['code'] ?? '',
-                'title' => $input['title'] ?? '',
-                'donvitinh_id' => $input['donvitinh_id'] ?? 0,
-                'loaisanpham_id' => $input['loaisanpham_id'] ?? 0,
-                'imp_price' => $input['imp_price'] ?? 0,
-                'exp_price' => $input['exp_price'] ?? 0,
+                'name' => $input['name'] ?? '',
+                'unit_id' => $input['unit_id'] ?? 0,
+                'category_id' => $input['category_id'] ?? 0,
+                'import_price' => $input['import_price'] ?? 0,
+                'sell_price' => $input['sell_price'] ?? 0,
                 'stock' => $input['stock'] ?? 0,
-                'is_vacxin' => $input['is_vacxin'] ?? 0,
-                'image' => ''
+                'is_active' => 1,
             ];
             $updated = $this->productsModel->updateProduct((int)$id, $data);
             return $this->json(['updated' => $updated]);

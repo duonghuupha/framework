@@ -1,7 +1,7 @@
 <?php
 class Products extends Model{
     protected static string $view_product = "v_products"; // view sản phẩm
-    protected static string $table = "tbl_sanpham"; // bảng sản phẩm
+    protected static string $table = "products"; // bảng sản phẩm
 
     public static function listProducts(array $params = []) : array{
         return self::paginate(static::$view_product, $params);
@@ -30,8 +30,8 @@ class Products extends Model{
     }
 
     public static function listComboProduct($name) : array|false{
-        $sql = "SELECT id, code, title, imp_price, exp_price, stock, (SELECT tbldm_donvitinh.title FROM tbldm_donvitinh WHERE tbldm_donvitinh.id = donvitinh_id) AS unit 
-                FROM " . static::$table . " WHERE (code LIKE '%$name%' OR title LIKE '%$name%') AND active = 1";
+        $sql = "SELECT id, code, name, import_price, sell_price, stock, (SELECT dm_units.name FROM dm_units WHERE dm_units.id = unit_id) AS unit 
+                FROM " . static::$table . " WHERE (code LIKE '%$name%' OR name LIKE '%$name%') AND is_active = 1";
         return self::dynamicQuery($sql);
     }
 }

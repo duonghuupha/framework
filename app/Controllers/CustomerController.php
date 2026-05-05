@@ -12,7 +12,7 @@ class CustomerController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'title' => $input['search']['name'] ?? '',
+                'name' => $input['search']['name'] ?? '',
                 'phone' => $input['search']['name'] ?? '',
             ],
             'filters' => [],
@@ -32,10 +32,9 @@ class CustomerController extends Controller{
         }else{
             $data = [
                 'code' => $input['code'] ?? '',
-                'title' => $input['title'] ?? '',
+                'name' => $input['name'] ?? '',
                 'address' => $input['address'] ?? '',
-                'phone' => $input['phone'] ?? '',
-                'ghi_chu' => $input['ghi_chu'] ?? ''
+                'phone' => $input['phone'] ?? ''
             ];
             $newCustomerId = $this->customerModel->addCustomer($data);
             return $this->json(['new_customer_id' => $data]);
@@ -50,10 +49,9 @@ class CustomerController extends Controller{
         }else{
             $data = [
                 'code' => $input['code'] ?? '',
-                'title' => $input['title'] ?? '',
+                'name' => $input['name'] ?? '',
                 'address' => $input['address'] ?? '',
-                'phone' => $input['phone'] ?? '',
-                'ghi_chu' => $input['ghi_chu'] ?? ''
+                'phone' => $input['phone'] ?? ''
             ];
             $updated = $this->customerModel->updateCustomer((int)$id, $data);
             return $this->json(['updated' => $updated]);
@@ -65,6 +63,8 @@ class CustomerController extends Controller{
         $deleted = $this->customerModel->deleteCustomer((int)$id);
         return $this->json(['deleted' => $deleted]);
     }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     function combo(){
         $payload = $this->checkToken();
@@ -72,5 +72,24 @@ class CustomerController extends Controller{
         $result = $this->customerModel->listComboCustomer($input['search']['name']);
         return $this->json($result);
     }
+
+    function debt($id){
+        $payload = $this->checkToken();
+        $total_s = 0; $total_t = 0;
+        $total_seller = $this->customerModel->getDebtCustomer((int)$id);
+        if(!empty($total_seller) && isset($total_seller[0]['total'])){
+            $total_s = (float)$total_seller[0]['total'];
+        }
+        $total_thu = $this->customerModel->getSellerCustomer((int)$id);
+        if(!empty($total_thu) && isset($total_thu[0]['total'])){
+            $total_t = (float)$total_thu[0]['total'];
+        }
+        $debt = $total_t - $total_s;
+        $data = [
+            "customer_id" => $id,
+            "debt" => $debt
+        ];
+        return $this->json(['debt' => $data]);
+    }   
 }
 ?>

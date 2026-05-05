@@ -12,7 +12,7 @@ class ImportsController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'date_import' => $input['search']['name'] ?? '',
+                'created_at' => $input['search']['name'] ?? '',
             ],
             'filters' => [],
             'order' => [
@@ -29,14 +29,22 @@ class ImportsController extends Controller{
         if(count($this->importsModel->dupliObjImports($input['code'], 0)) > 0){
             return $this->json([], 'error', 'Mã phiếu nhập đã tồn tại');
         }else{
+            // tinh total
+            $totalAmount = 0;
+            foreach($input['products'] as $row){
+                $qty = (float)($row['quantity'] ?? 0);
+                $price = (float)($row['price'] ?? 0);
+                $totalAmount += $qty * $price;
+            }
             $data = [
                 'code' => $input['code'] ?? '',
-                'nhacungcap_id' => $input['nhacungcap_id'] ?? '',
-                'date_import' => $input['date_import'] ?? '',
-                'total_qty' => $input['total_qty'] ?? '',
-                'total_price' => $input['total_price'] ?? '',
-                'ghi_chu' => $input['ghi_chu'] ?? '',
-                'status' => $input['status'] ?? ''
+                'supplier_id' => $input['supplier_id'] ?? '',
+                'created_at' => $input['created_at'].' '.date("H:i:s") ?? date("Y-m-d H:i:s"),
+                'total_amount' => $totalAmount,
+                'paid_amount' => 0,
+                'debt_amount' => $totalAmount,
+                'status' => 'debt',
+                'note' => $input['ghi_chu'] ?? ''
             ];
             $newImports = $this->importsModel->addImports($data);
 
@@ -46,18 +54,22 @@ class ImportsController extends Controller{
 
             if(!empty($input['products'])){
                 foreach($input['products'] as $row){
+                    $qty = (float)$row['quantity'];
+                    $price = (float)$row['price'];
                     $detail = [
-                        'code' => $input['code'],
-                        'id_product' => $row['id'],
-                        'qty' => $row['quantity'],
-                        'imp_price' => $row['price'],
-                        'exp_price' => $row['exp_price']
+                        'import_id' => $newImports,
+                        'product_id' => $row['id'],
+                        'qty' => $qty,
+                        'price' => $price,
+                        'total' => $qty * $price
                     ];
-                    $this->importsModel->addImportsDetail($detail);
+                    $res = $this->importsModel->addImportsDetail($detail);
+                    if(!$res){
+                        return $this->json([], 'error', "Lỗi thêm chi tiết phiếu nhập");
+                    }
                 }
             }
-
-            return $this->json(['new_imports_id' => $newImports]);
+            return $this->json(['import_id' => $newImports]);
         }
     }
 }

@@ -24,6 +24,8 @@ $router->get('/categories/combo', 'CategoriesController@combo');
 $router->get('/manufacturer/combo', 'ManufacturerController@combo');
 $router->get('/products/combo', 'ProductsController@combo');
 $router->get('/customer/combo', 'CustomerController@combo');
+/**Các API khác*/
+$router->get('/customer/{id}/debt', 'CustomerController@debt');
 
 // Route test nhanh
 $router->setNotFound(function() {

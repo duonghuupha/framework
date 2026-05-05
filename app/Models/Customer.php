@@ -1,6 +1,8 @@
 <?php
 class Customer extends Model{
-    protected static string $table = "tbl_customers"; //bảng khách hàng
+    protected static string $table = "customers"; //bảng khách hàng
+    protected static string $table_debt = "tbl_thu"; // bảng thu
+    protected static string $table_sellers = "tbl_sellers"; // bảng bán hàng
 
     public static function listCustomer(array $params = []) : array{
         return self::paginate(static::$table, $params);
@@ -29,8 +31,20 @@ class Customer extends Model{
     }
 
     public static function listComboCustomer($name) : array|false{
-        $sql = "SELECT id, code, title, address, phone FROM " . static::$table . " WHERE title LIKE ? OR phone LIKE ?";
+        $sql = "SELECT id, code, name, address, phone, is_default FROM " . static::$table . " WHERE title LIKE ? OR phone LIKE ?";
         $params = ["%$name%", "%$name%"];
+        return self::dynamicQuery($sql, $params);
+    }
+
+    public static function getDebtCustomer(int $id) : array|false{
+        $sql = "SELECT SUM(price) AS total FROM " . static::$table_debt . " WHERE customer_id = ? GROUP BY customer_id";
+        $params = [$id];
+        return self::dynamicQuery($sql, $params);
+    }
+
+    public static function getSellerCustomer(int $id) : array|false{
+        $sql = "SELECT SUM(total_price) AS total FROM " . static::$table_sellers . " WHERE customer_id = ? GROUP BY customer_id";
+        $params = [$id];
         return self::dynamicQuery($sql, $params);
     }
 }
