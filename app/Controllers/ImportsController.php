@@ -12,7 +12,9 @@ class ImportsController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'created_at' => $input['search']['name'] ?? '',
+                'supplier_id' => $input['search']['supplier_id'] ?? '',
+                'date' => $input['search']['date'] ?? '',
+                'product' => $input['search']['product'] ?? ''
             ],
             'filters' => [],
             'order' => [
