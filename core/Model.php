@@ -244,9 +244,7 @@ class Model{
     /**
      * Phân trang + tìm kiếm + lọc + sắp xếp + Filter (có cache)
      */
-    public static function paginateAdv(
-        string $table,
-        array $params = [],
+    public static function paginateAdv(string $table, array $params = [],
         int $ttl = 30
     ): array {
 
@@ -365,6 +363,7 @@ class Model{
             }
         );
     }
+    
     protected static function buildWhereAdv(
         array $filters = [],
         array $search = [],
