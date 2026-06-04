@@ -8,12 +8,22 @@ class ImportsController extends Controller{
     function index(){
         $payload = $this->checkToken();
         $input = Input::all();
+        $created_at = $input['search']['created_at'] ?? '';
+        $date = '';
+
+        if (!empty($created_at)) {
+            $objectDate = DateTime::createFromFormat('d/m/Y', $created_at);
+
+            if ($objectDate) {
+                $date = $objectDate->format('Y-m-d');
+            }
+        }
         $params = [
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
                 'supplier_id' => $input['search']['supplier_id'] ?? '',
-                'date' => $input['search']['date'] ?? '',
+                'created_at' => $date,
                 'product' => $input['search']['product'] ?? ''
             ],
             'filters' => [],

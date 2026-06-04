@@ -236,4 +236,209 @@ class Model{
         $whereSQL = !empty($conditions) ? 'WHERE ' . implode(' OR ', $conditions) : '';
         return [$whereSQL, $params];
     }
+
+    // ================================================================
+    // 🔹 PHÂN TRANG & TÌM KIẾM NÂNG CAO
+    // ================================================================
+
+    /**
+     * Phân trang + tìm kiếm + lọc + sắp xếp + Filter (có cache)
+     */
+    public static function paginateAdv(
+        string $table,
+        array $params = [],
+        int $ttl = 30
+    ): array {
+
+        $page   = max(1, (int)($params['page'] ?? 1));
+        $limit  = max(1, (int)($params['limit'] ?? 10));
+        $offset = ($page - 1) * $limit;
+
+        $order   = $params['order'] ?? ['id' => 'DESC'];
+        $search  = $params['search'] ?? [];
+        $filters = $params['filters'] ?? [];
+        $exists  = $params['exists'] ?? [];
+        $raw     = $params['raw'] ?? [];
+
+        [$whereSQL, $queryParams] =
+            self::buildWhereAdv(
+                $filters,
+                $search,
+                $exists,
+                $raw
+            );
+
+        // ORDER BY
+        $orderSQL = '';
+
+        if (!empty($order)) {
+
+            $orderParts = [];
+
+            foreach ($order as $col => $dir) {
+
+                $dir =
+                    strtoupper($dir) === 'DESC'
+                    ? 'DESC'
+                    : 'ASC';
+
+                $orderParts[] =
+                    "{$col} {$dir}";
+            }
+
+            $orderSQL =
+                " ORDER BY " .
+                implode(', ', $orderParts);
+        }
+
+        // Cache
+        $version = self::getTableCacheVersion();
+
+        $cacheKey = sprintf(
+            "paginate_adv_%s_%s_%s",
+            $table,
+            $version,
+            md5(json_encode([
+                'page' => $page,
+                'limit' => $limit,
+                'order' => $order,
+                'filters' => $filters,
+                'search' => $search,
+                'exists' => $exists,
+                'raw' => $raw
+            ]))
+        );
+
+        return Cache::remember(
+            $cacheKey,
+            $ttl,
+            function() use (
+                $table,
+                $whereSQL,
+                $queryParams,
+                $orderSQL,
+                $limit,
+                $offset,
+                $page
+            ) {
+
+                $countSQL =
+                    "SELECT COUNT(*) AS total
+                     FROM {$table}
+                     {$whereSQL}";
+
+                $countStmt =
+                    self::execQuery(
+                        $countSQL,
+                        $queryParams
+                    );
+
+                $total =
+                    (int)$countStmt->fetchColumn();
+
+                $sql =
+                    "SELECT *
+                     FROM {$table}
+                     {$whereSQL}
+                     {$orderSQL}
+                     LIMIT {$limit}
+                     OFFSET {$offset}";
+
+                $stmt =
+                    self::execQuery(
+                        $sql,
+                        $queryParams
+                    );
+
+                $data =
+                    $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                return [
+                    'pagination' => [
+                        'page' => $page,
+                        'limit' => $limit,
+                        'total' => $total,
+                        'total_pages' => ceil($total / $limit)
+                    ],
+                    'rows' => $data
+                ];
+            }
+        );
+    }
+    protected static function buildWhereAdv(
+        array $filters = [],
+        array $search = [],
+        array $exists = [],
+        array $raw = []
+    ): array {
+
+        $conditions = [];
+        $params = [];
+
+        // FILTER (=)
+        foreach ($filters as $col => $val) {
+
+            if ($val === '' || $val === null) {
+                continue;
+            }
+
+            $conditions[] = "{$col} = ?";
+            $params[] = $val;
+        }
+
+        // SEARCH (LIKE)
+        $searchConditions = [];
+
+        foreach ($search as $col => $val) {
+
+            if ($val === '' || $val === null) {
+                continue;
+            }
+
+            $searchConditions[] = "{$col} LIKE ?";
+            $params[] = '%' . $val . '%';
+        }
+
+        if (!empty($searchConditions)) {
+            $conditions[] =
+                '(' . implode(' OR ', $searchConditions) . ')';
+        }
+
+        // EXISTS
+        foreach ($exists as $item) {
+
+            if (empty($item['sql'])) {
+                continue;
+            }
+
+            $conditions[] =
+                'EXISTS (' . $item['sql'] . ')';
+
+            foreach (($item['params'] ?? []) as $param) {
+                $params[] = $param;
+            }
+        }
+
+        // RAW
+        foreach ($raw as $item) {
+
+            if (empty($item['sql'])) {
+                continue;
+            }
+
+            $conditions[] =
+                '(' . $item['sql'] . ')';
+
+            foreach (($item['params'] ?? []) as $param) {
+                $params[] = $param;
+            }
+        }
+
+        $whereSQL =
+            !empty($conditions)
+            ? 'WHERE ' . implode(' AND ', $conditions)
+            : '';
+
+        return [$whereSQL, $params];
+    }
 }

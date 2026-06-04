@@ -5,7 +5,34 @@ class Imports extends Model{
     protected static string $view_import = "v_imports"; // view hiển thị danh sách nhập kho
 
     public static function listImports(array $params = []) : array{
-        return self::paginate(static::$view_import, $params);
+        //return self::paginate(static::$view_import, $params);
+        $product = $params['search']['product'] ?? '';
+
+        unset($params['search']['product']);
+
+        if(!empty($product)){
+
+            $params['exists'][] = [
+
+                'sql' => "
+                    SELECT 1
+                    FROM import_items d
+                    INNER JOIN products p
+                        ON p.id = d.product_id
+                    WHERE d.import_id = v_imports.id
+                    AND p.name LIKE ?
+                ",
+
+                'params' => [
+                    "%{$product}%"
+                ]
+            ];
+        }
+
+        return self::paginateAdv(
+            static::$view_import,
+            $params
+        );
     }
 
     public static function dupliObjImports($code, $id) : array|false{
