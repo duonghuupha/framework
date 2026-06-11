@@ -7,13 +7,10 @@ class Imports extends Model{
     public static function listImports(array $params = []) : array{
         //return self::paginate(static::$view_import, $params);
         $product = $params['search']['product'] ?? '';
-
         unset($params['search']['product']);
-
         if(!empty($product)){
-
-            $params['exists'][] = [
-
+            $params['advanced'][] = [
+                'type' => 'exists',
                 'sql' => "
                     SELECT 1
                     FROM import_items d
@@ -22,7 +19,6 @@ class Imports extends Model{
                     WHERE d.import_id = v_imports.id
                     AND p.name LIKE ?
                 ",
-
                 'params' => [
                     "%{$product}%"
                 ]

@@ -245,89 +245,42 @@ class Model{
      * Phân trang + tìm kiếm + lọc + sắp xếp + Filter (có cache)
      */
     public static function paginateAdv(string $table, array $params = [], int $ttl = 30): array {
-
         $page   = max(1, (int)($params['page'] ?? 1));
         $limit  = max(1, (int)($params['limit'] ?? 20));
         $offset = ($page - 1) * $limit;
-
         $filters  = $params['filters'] ?? [];
         $search   = $params['search'] ?? [];
         $advanced = $params['advanced'] ?? [];
         $order    = $params['order'] ?? [];
 
-        [
-            $whereSQL,
-            $queryParams
-        ] = self::buildWhereAdv(
-            $filters,
-            $search,
-            $advanced
-        );
+        [ $whereSQL, $queryParams] = self::buildWhereAdv($filters, $search, $advanced);
 
         /**
          * ORDER BY
          */
         $orderSQL = '';
-
         if (!empty($order)) {
-
             $orderParts = [];
-
             foreach ($order as $field => $direction) {
-
-                $direction =
-                    strtoupper($direction) === 'DESC'
-                    ? 'DESC'
-                    : 'ASC';
-
-                $orderParts[] =
-                    "{$field} {$direction}";
+                $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+                $orderParts[] = "{$field} {$direction}";
             }
-
-            $orderSQL =
-                ' ORDER BY ' .
-                implode(', ', $orderParts);
+            $orderSQL = ' ORDER BY ' . implode(', ', $orderParts);
         }
 
         /**
          * COUNT
          */
-        $countSql = "
-            SELECT COUNT(*) total
-            FROM {$table}
-            {$whereSQL}
-        ";
-
-        $countStmt =
-            self::execQuery(
-                $countSql,
-                $queryParams
-            );
-
-        $total =
-            (int)$countStmt
-                ->fetch(PDO::FETCH_ASSOC)['total'];
+        $countSql = " SELECT COUNT(*) total FROM {$table} {$whereSQL}";
+        $countStmt = self::execQuery($countSql, $queryParams);
+        $total = (int)$countStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
         /**
          * DATA
          */
-        $sql = "
-            SELECT *
-            FROM {$table}
-            {$whereSQL}
-            {$orderSQL}
-            LIMIT {$limit}
-            OFFSET {$offset}
-        ";
-
-        $stmt =
-            self::execQuery(
-                $sql,
-                $queryParams
-            );
-
-        $rows =
-            $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $sql = "SELECT * FROM {$table} {$whereSQL} {$orderSQL} LIMIT {$limit} OFFSET {$offset}";
+        $stmt = self::execQuery($sql, $queryParams);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return [
             'rows' => $rows,
@@ -340,12 +293,7 @@ class Model{
         ];
     }
     
-    protected static function buildWhereAdv(
-        array $filters = [],
-        array $search = [],
-        array $advanced = []
-    ): array {
-
+    protected static function buildWhereAdv(array $filters = [], array $search = [], array $advanced = []): array {
         $conditions = [];
         $queryParams = [];
 
@@ -353,11 +301,9 @@ class Model{
          * FILTER (=)
          */
         foreach ($filters as $field => $value) {
-
             if ($value === '' || $value === null) {
                 continue;
             }
-
             $conditions[] = "{$field} = ?";
             $queryParams[] = $value;
         }
@@ -366,66 +312,44 @@ class Model{
          * SEARCH (LIKE)
          */
         $searchConditions = [];
-
         foreach ($search as $field => $value) {
-
             if ($value === '' || $value === null) {
                 continue;
             }
-
             $searchConditions[] = "{$field} LIKE ?";
             $queryParams[] = "%{$value}%";
         }
 
         if (!empty($searchConditions)) {
-            $conditions[] =
-                '(' . implode(' OR ', $searchConditions) . ')';
+            $conditions[] = '(' . implode(' OR ', $searchConditions) . ')';
         }
 
         /**
          * ADVANCED
          */
         foreach ($advanced as $item) {
-
             if (empty($item['sql'])) {
                 continue;
             }
-
             $type = strtolower(
                 $item['type'] ?? 'raw'
             );
-
             switch ($type) {
-
                 case 'exists':
-
-                    $conditions[] =
-                        'EXISTS (' . $item['sql'] . ')';
-
+                    $conditions[] = 'EXISTS (' . $item['sql'] . ')';
                 break;
-
                 case 'raw':
-
                 default:
-
-                    $conditions[] =
-                        '(' . $item['sql'] . ')';
-
+                    $conditions[] = '(' . $item['sql'] . ')';
                 break;
             }
-
             foreach (($item['params'] ?? []) as $param) {
                 $queryParams[] = $param;
             }
         }
-
         $whereSQL = '';
-
         if (!empty($conditions)) {
-
-            $whereSQL =
-                'WHERE ' .
-                implode(' AND ', $conditions);
+            $whereSQL = 'WHERE ' . implode(' AND ', $conditions);
         }
 
         return [
