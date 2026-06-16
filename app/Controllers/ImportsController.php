@@ -84,5 +84,12 @@ class ImportsController extends Controller{
             return $this->json(['import_id' => $newImports]);
         }
     }
+
+    function details(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $result = $this->importsModel->getImportItems($input['id']);
+        return $this->json($result);
+    }
 }
 ?>
