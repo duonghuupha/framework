@@ -65,10 +65,7 @@ class Imports extends Model{
             ORDER BY ii.id ASC
         ";
 
-        return self::dynamicQuery(
-            $sql,
-            [$id]
-        );
+        return self::dynamicQuery($sql,[$id]);
     }
 }
 ?>

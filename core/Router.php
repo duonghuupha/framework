@@ -62,24 +62,16 @@ class Router {
             echo json_encode(['error' => 'Cấu hình route không hợp lệ (method)']);
             return;
         }
-
-        /*foreach ($this->routes[$method] as $route => $callback) {
-            if ($route === $path) {
-                if (is_callable($callback)) {
-                    call_user_func($callback);
-                    return;
-                } elseif (is_string($callback)) {
-                    $this->callController($callback);
-                    return;
-                }
-            }
-        }*/
         foreach ($this->routes[$method] as $route => $callback) {
             $pattern = preg_replace('#\{[^/]+\}#', '([^/]+)', $route);
             $pattern = "#^" . $pattern . "$#";
 
             if(preg_match($pattern, $path, $matches)) {
                 array_shift($matches); // Loại bỏ phần tử đầu tiên (toàn bộ chuỗi khớp)
+                preg_match_all('/\{([^\/]+)\}/', $route, $keys);
+                foreach ($keys[1] as $index => $key) {
+                    $_GET[$key] = $matches[$index];
+                }
 
                 if (is_callable($callback)) {
                     call_user_func_array($callback, $matches);
