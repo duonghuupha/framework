@@ -1,10 +1,11 @@
 <?php
 class Sellers extends Model{
-    protected static string $table = "tbl_sellers"; //bảng bán hàng
-    protected static string $table_detail = "tbl_sellers_detail";
+    protected static string $v_table = "v_sellers"; // view danh sach hoa don
+    protected static string $table = "sellers"; //bảng bán hàng
+    protected static string $table_detail = "seller_items";
 
     public static function listSellers(array $params = []) : array{
-        return self::paginate(static::$table, $params);
+        return self::paginate(static::$v_table, $params);
     }
 
     public static function dupliObjSellers($code, $id) : array|false{
