@@ -27,6 +27,18 @@ class Model{
         Cache::set($key, time());
     }
 
+    public static function beginTransaction(): bool{
+        return self::getDB()->beginTransaction();
+    }
+
+    public static function commit(): bool{
+        return self::getDB()->commit();
+    }
+
+    public static function rollback(): bool{
+        return self::getDB()->rollBack();
+    }
+
     /**
      * Thực thi truy vấn SQL có tham số (tránh SQL injection)
      */
