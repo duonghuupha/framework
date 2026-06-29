@@ -1,64 +1,56 @@
 <?php
 class SellersController extends Controller{
-    protected $sellersModel; // Khai bao su dung Model
+    protected Sellers $sellerModel;
     public function __construct(){
-        $this->sellersModel = new Sellers();
+        $this->sellerModel = new Sellers();
     }
 
-    function index(){
-        $payload = $this->checkToken();
-        $input = Input::all();
-        $params = [
-            'page' => $input['page'] ?? 1,
-            'limit' => $input['limit'] ?? 20,
-            'search' => [
-                'date_seller' => $input['search']['name'] ?? '',
-            ],
-            'filters' => [],
-            'order' => [
-                'id' => 'DESC'
-            ]
-        ];
-        $result = $this->sellersModel->listSellers($params);
-        return $this->json($result);
+    /**
+     * Danh sách hóa đơn bán
+     */
+    public function index(){
+        try {
+            $this->checkToken();
+            $params = Input::all();
+            $result = $this->sellerModel->listSellers($params);
+            return $this->json($result);
+        } catch (Exception $e) {
+            return $this->json([], 'error', $e->getMessage());
+        }
     }
 
-    function add(){
-        $payload = $this->checkToken();
-        $input = Input::all();
-        if(count($this->importsModel->dupliObjImports($input['code'], 0)) > 0){
-            return $this->json([], 'error', 'Mã phiếu nhập đã tồn tại');
-        }else{
-            $data = [
-                'code' => $input['code'] ?? '',
-                'nhacungcap_id' => $input['nhacungcap_id'] ?? '',
-                'date_import' => $input['date_import'] ?? '',
-                'total_qty' => $input['total_qty'] ?? '',
-                'total_price' => $input['total_price'] ?? '',
-                'ghi_chu' => $input['ghi_chu'] ?? '',
-                'status' => $input['status'] ?? ''
-            ];
-            $newImports = $this->importsModel->addImports($data);
-
-            if(!$newImports){
-                return $this->json([], 'error', "Không tạo được phiếu nhập");
+    /**
+     * Chi tiết hóa đơn
+     */
+    public function detail(){
+        try {
+            $this->checkToken();
+            $input = Input::all();
+            if (empty($input['id'])) {
+                throw new Exception("Thiếu ID hóa đơn.");
             }
-
-            if(!empty($input['products'])){
-                foreach($input['products'] as $row){
-                    $detail = [
-                        'code' => $input['code'],
-                        'id_product' => $row['id'],
-                        'qty' => $row['quantity'],
-                        'imp_price' => $row['price'],
-                        'exp_price' => $row['exp_price']
-                    ];
-                    $this->importsModel->addImportsDetail($detail);
-                }
+            $header = $this->sellerModel->find((int)$input['id']);
+            if (!$header) {
+                throw new Exception("Không tìm thấy hóa đơn.");
             }
+            $products = $this->sellerModel->detailSeller((int)$input['id']);
+            return $this->json(['header' => $header,'products' => $products]);
+        } catch (Exception $e) {
+            return $this->json([], 'error', $e->getMessage());
+        }
+    }
 
-            return $this->json(['new_imports_id' => $newImports]);
+    /**
+     * Thêm hóa đơn bán
+     */
+    public function add(){
+        try {
+            $this->checkToken();
+            $input = Input::all();
+            $sellerId = $this->sellerModel->createSeller($input);
+            return $this->json(['id' => $sellerId]);
+        } catch (Exception $e) {
+            return $this->json([], 'error', $e->getMessage());
         }
     }
 }
-?>
