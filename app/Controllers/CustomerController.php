@@ -73,23 +73,17 @@ class CustomerController extends Controller{
         return $this->json($result);
     }
 
-    function debt($id){
-        $payload = $this->checkToken();
-        $total_s = 0; $total_t = 0;
-        $total_seller = $this->customerModel->getDebtCustomer((int)$id);
-        if(!empty($total_seller) && isset($total_seller[0]['total'])){
-            $total_s = (float)$total_seller[0]['total'];
+    public function debt($id){
+        $this->checkToken();
+        if (empty($id)) {
+            return $this->json([], 'error', 'Thiếu khách hàng.');
         }
-        $total_thu = $this->customerModel->getSellerCustomer((int)$id);
-        if(!empty($total_thu) && isset($total_thu[0]['total'])){
-            $total_t = (float)$total_thu[0]['total'];
-        }
-        $debt = $total_t - $total_s;
+        $debt = $this->customerModel->getDebtCustomer($id);
         $data = [
             "customer_id" => $id,
             "debt" => $debt
         ];
-        return $this->json(['debt' => $data]);
-    }   
+        return $this->json(['debt' => $debt]);
+    }  
 }
 ?>
