@@ -35,6 +35,21 @@ class AuthController extends Controller{
             'permissions' => ["dashboard", "products.view", "products.create", "products.edit", "products.delete", "customer.view",
                                 "customer.create", "customer.edit", "customer.delete", "import", "seller", "examination", "revenue", "expenditure", 
                                 "report", "report.import", "report.seller", "report.revenue", "report.expenditure", "users"],
+            'settings' => ['stock' => [
+                    'allow_negative'  => true, // Có cho tồn kho âm không
+                    'warning_minimum' => true, // có cảnh báo sắp hết hàng không
+                ],
+
+                'seller' => [
+                    'allow_discount'   => true, // có giảm giá cho kkhách hàng không
+                    'allow_edit_price' => true, // KHi bán có cho nhân vieen sửa giá không
+                ],
+
+                'customer' => [
+                    'allow_debt' => true, // có bán hàng nợ cho khách không
+                    'show_debt'  => true, // Có hiển thị cổng nợ của khác khi chọn khách hàng không
+                ],
+            ]
         ];
         return $this->json($data, 'success', 'Đăng nhập thành công', 200);
     }
