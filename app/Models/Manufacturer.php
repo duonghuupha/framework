@@ -7,7 +7,9 @@ class Manufacturer extends Model{
     }
 
     public static function listCombo() : array{
-        return self::all();
+        //return self::all();
+        $sql = "SELECT id AS value, name AS label FROM " . static::$table;
+        return self::dynamicQuery($sql);
     }
 }
 ?>
