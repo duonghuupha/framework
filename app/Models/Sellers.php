@@ -251,8 +251,8 @@ class Sellers extends Model{
         $header = [
             'code' => $input['code'],
             'customer_id' => $input['customer_id'] ?? null,
-            'seller_date' => $input['seller_date'],
-            'note' => $input['note'] ?? '',
+            'created_at' => $input['date_seller'],
+            //'note' => $input['note'] ?? '',
             'discount' => $input['discount'] ?? 0,
             'total_amount' => $summary['header']['total_amount'],
             'discount_amount' => $summary['header']['discount_amount'],
