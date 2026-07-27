@@ -252,13 +252,13 @@ class Sellers extends Model{
             'code' => $input['code'],
             'customer_id' => $input['customer_id'] ?? null,
             'created_at' => $input['date_seller'],
-            //'note' => $input['note'] ?? '',
+            'note' => $input['note'] ?? '',
             'total_amount' => $summary['header']['total_amount'], // tong tien truoc giam
             'discount_amount' => $summary['header']['discount_amount'], // giam gia
             'final_amount' => $summary['header']['final_amount'], // tong tien sau giam
             'paid_amount' => $summary['header']['paid_amount'], // so tien thanh toan
             'debt_amount' => $summary['header']['debt_amount'], // cong no cua hoa down
-            'status' => $summary['header']['debt_amount'] > 0 ? 'debt' : 'completed'
+            'status' => $summary['header']['debt_amount'] > 0 ? 'debt' : 'completed'// trang thai cua hoa don no hay khong no
         ];
         self::beginTransaction();
         try {
