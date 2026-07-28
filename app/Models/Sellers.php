@@ -82,18 +82,18 @@ class Sellers extends Model{
      * TÍNH TOÁN 1 DÒNG SẢN PHẨM
      * ========================================================== */
     private static function calculateItem(array $item): array{
-        $price = (float)$item['price'];
-        $qty = (float)$item['quantity'];
-        $discount = (float)($item['discount'] ?? 0);
-        $originTotal = $price * $qty;
-        $finalPrice = self::calculateDiscount($price,$discount);
-        $finalTotal = $finalPrice * $qty;
-        $item['price'] = $price;
-        $item['quantity'] = $qty;
-        $item['discount'] = $discount;
-        $item['origin_total'] = $originTotal;
-        $item['final_price'] = $finalPrice;
-        $item['total'] = $finalTotal;
+        $price = (float)$item['price']; // don gia
+        $qty = (float)$item['quantity']; // so luong
+        $discount = (float)($item['discount'] ?? 0); // giam gia
+        $originTotal = $price * $qty; // tien trước giam
+        $finalPrice = self::calculateDiscount($price,$discount); // don gia sau guiam
+        $finalTotal = $finalPrice * $qty; // tong tien sau giam
+        $item['price'] = $price; // don gia
+        $item['quantity'] = $qty; // so luong
+        $item['discount'] = $discount; // giam gia
+        $item['origin_total'] = $originTotal; // tong tien trươc giam
+        $item['final_price'] = $finalPrice; // don gia sau giam
+        $item['total'] = $finalTotal; // tong tien sau giam
         return $item;
     }
 
@@ -107,8 +107,8 @@ class Sellers extends Model{
         foreach ($input['products'] as $item) {
             $item = self::calculateItem($item);
             $products[] = $item;
-            $totalAmount += $item['origin_total'];
-            $discountAmount += ($item['origin_total'] - $item['total']);
+            $totalAmount += $item['origin_total']; // tong tien san pham
+            $discountAmount += ($item['origin_total'] - $item['total']); // giam gia
         }
         $subTotal = $totalAmount - $discountAmount;
         $invoiceDiscount = (float)($input['discount'] ?? 0);
@@ -154,7 +154,7 @@ class Sellers extends Model{
             return [];
         }
         $placeholder = implode(',', array_fill(0, count($ids), '?'));
-        $sql = " SELECT id, code, barcode, name, stock FROM products WHERE id IN ($placeholder)";
+        $sql = " SELECT id, code, name, stock FROM products WHERE id IN ($placeholder)";
         $rows = self::dynamicQuery($sql, $ids);
         $stocks = [];
         foreach ($rows as $row) {
@@ -194,7 +194,7 @@ class Sellers extends Model{
             $detail = [
                 'seller_id' => $sellerId,
                 'product_id' => $item['id'],
-                'quantity' => $item['quantity'],
+                'qty' => $item['quantity'],
                 'price' => $item['price'],
                 'discount' => $item['discount'],
                 'final_price' => $item['final_price'],
@@ -216,7 +216,7 @@ class Sellers extends Model{
         }
         $payment = [
             'seller_id' => $sellerId,
-            'method' => self::normalizePayment((int)$input['payment']),
+            'method' => self::normalizePayment((int)$input['method']),
             'amount' => $summary['header']['paid_amount']
         ];
         $result = self::insertTo(static::$table_payment, $payment);
@@ -246,7 +246,7 @@ class Sellers extends Model{
         if (!empty($duplicate)) {
             throw new Exception("Mã hóa đơn đã tồn tại.");
         }
-        $summary = self::calculateSummary($input);
+        $summary = self::calculateSummary($input); // tinh tien hoa dơn
         self::checkStocks($summary['products']);
         $header = [
             'code' => $input['code'],
@@ -257,7 +257,7 @@ class Sellers extends Model{
             'discount_amount' => $summary['header']['discount_amount'], // giam gia
             'final_amount' => $summary['header']['final_amount'], // tong tien sau giam
             'paid_amount' => $summary['header']['paid_amount'], // so tien thanh toan
-            'debt_amount' => $summary['header']['debt_amount'], // cong no cua hoa down
+            'debt_amount' => $summary['header']['debt_amount'], // cong no cua hoa don
             'status' => $summary['header']['debt_amount'] > 0 ? 'debt' : 'completed'// trang thai cua hoa don no hay khong no
         ];
         self::beginTransaction();
