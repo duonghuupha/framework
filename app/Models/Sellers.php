@@ -124,6 +124,11 @@ class Sellers extends Model{
                 'final_amount' => $finalAmount,
                 'paid_amount' => $paidAmount,
                 'debt_amount' => $debtAmount
+            ],
+            'payment' => [
+                'cash_amount' => $input['cash_amount'],
+                'bank_amount' => $input['bank_amount'],
+                'customer_pay' => $input['customerpay']
             ]
         ];
     }
@@ -210,15 +215,29 @@ class Sellers extends Model{
     /* ==========================================================
      * LƯU THANH TOÁN
      * ========================================================== */
-    private static function insertPayment(int $sellerId, array $input, array $summary): void{
+    private static function insertPayment(int $sellerId, array $summary): void{
         if ($summary['header']['paid_amount'] <= 0) {
             return;
         }
-        $payment = [
+        /*$payment = [
             'seller_id' => $sellerId,
             'method' => self::normalizePayment((int)$input['method']),
             'amount' => $summary['header']['paid_amount']
-        ];
+        ];*/
+        if(($summary['payment']['cash_amount'] ?? 0) > 0){
+            $payment = [
+                'sellers_id' => $sellerId,
+                'method' => self::normalizePayment(1),
+                'amount' => $summary['payment']['cash_amount']
+            ];
+        }
+        if(($summary['payment']['bank_amount'] ?? 0) > 0){
+            $payment = [
+                'sellers_id' => $sellerId,
+                'method' => self::normalizePayment(2),
+                'amount' => $summary['payment']['bank_amount']
+            ];
+        }
         $result = self::insertTo(static::$table_payment, $payment);
         if (!$result) {
             throw new Exception("Không lưu được thông tin thanh toán.");
