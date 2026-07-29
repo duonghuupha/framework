@@ -3747,7 +3747,6 @@ INSERT INTO `import_items` (`id`, `import_id`, `product_id`, `qty`, `price`, `to
 DELIMITER $$
 CREATE TRIGGER `trg_import_stock` AFTER INSERT ON `import_items` FOR EACH ROW UPDATE products SET stock = stock + NEW.qty WHERE id = NEW.product_id
 $$
-$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -3785,13 +3784,15 @@ DELIMITER $$
 CREATE TRIGGER `trg_internal_stock` AFTER INSERT ON `internal_transfer_items` FOR EACH ROW BEGIN
     UPDATE products 
     SET stock = stock - NEW.qty_from 
-    WHERE id = NEW.product_from_id$$
+    WHERE id = NEW.product_from_id;
+END$$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `trg_internal_stock_delete` AFTER DELETE ON `internal_transfer_items` FOR EACH ROW BEGIN
     UPDATE products 
     SET stock = stock + OLD.qty_from 
-    WHERE id = OLD.product_from_id$$
+    WHERE id = OLD.product_from_id;
+END$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -30526,7 +30527,6 @@ INSERT INTO `seller_items` (`id`, `seller_id`, `product_id`, `qty`, `price`, `di
 --
 DELIMITER $$
 CREATE TRIGGER `trg_sell_stock` AFTER INSERT ON `seller_items` FOR EACH ROW UPDATE products SET stock = stock - NEW.qty WHERE id = NEW.product_id
-$$
 $$
 DELIMITER ;
 

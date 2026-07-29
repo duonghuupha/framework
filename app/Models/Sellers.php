@@ -40,6 +40,14 @@ class Sellers extends Model{
                 ]
             ];
         }
+
+        // Mặc định sắp xếp mới nhất lên đầu
+        if (empty($params['order'])) {
+            $params['order'] = [
+                'id' => 'DESC'
+            ];
+        }
+
         return self::paginateAdv(static::$view, $params);
     }
 
@@ -128,7 +136,7 @@ class Sellers extends Model{
             'payment' => [
                 'cash_amount' => $input['cash_amount'],
                 'bank_amount' => $input['bank_amount'],
-                'customer_pay' => $input['customerpay']
+                'customer_pay' => $input['customer_pay']
             ]
         ];
     }
@@ -226,14 +234,14 @@ class Sellers extends Model{
         ];*/
         if(($summary['payment']['cash_amount'] ?? 0) > 0){
             $payment = [
-                'sellers_id' => $sellerId,
+                'seller_id' => $sellerId,
                 'method' => self::normalizePayment(1),
                 'amount' => $summary['payment']['cash_amount']
             ];
         }
         if(($summary['payment']['bank_amount'] ?? 0) > 0){
             $payment = [
-                'sellers_id' => $sellerId,
+                'seller_id' => $sellerId,
                 'method' => self::normalizePayment(2),
                 'amount' => $summary['payment']['bank_amount']
             ];
@@ -283,7 +291,7 @@ class Sellers extends Model{
         try {
             $sellerId = self::insertHeader($header);
             self::insertItems($sellerId,$summary['products']);
-            self::insertPayment($sellerId, $input, $summary);
+            self::insertPayment($sellerId, $summary);
             self::decreaseStocks($summary['products']);
             self::commit();
             return $sellerId;
