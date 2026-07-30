@@ -9,14 +9,6 @@ class SellersController extends Controller{
      * Danh sách hóa đơn bán
      */
     public function index(){
-        /*try {
-            $this->checkToken();
-            $params = Input::all();
-            $result = $this->sellerModel->listSellers($params);
-            return $this->json($result);
-        } catch (Exception $e) {
-            return $this->json([], 'error', $e->getMessage());
-        }*/
         $payload = $this->checkToken();
         $input = Input::all();
         $date_start = $input['search']['date_start'] ?? '';
@@ -58,22 +50,11 @@ class SellersController extends Controller{
     /**
      * Chi tiết hóa đơn
      */
-    public function detail(){
-        try {
-            $this->checkToken();
-            $input = Input::all();
-            if (empty($input['id'])) {
-                throw new Exception("Thiếu ID hóa đơn.");
-            }
-            $header = $this->sellerModel->find((int)$input['id']);
-            if (!$header) {
-                throw new Exception("Không tìm thấy hóa đơn.");
-            }
-            $products = $this->sellerModel->detailSeller((int)$input['id']);
-            return $this->json(['header' => $header,'products' => $products]);
-        } catch (Exception $e) {
-            return $this->json([], 'error', $e->getMessage());
-        }
+    function details(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $result = $this->sellerModel->getSellerItems($input['id']);
+        return $this->json($result);
     }
 
     /**

@@ -82,10 +82,28 @@ class Sellers extends Model{
     /* ==========================================================
      * CHI TIẾT HÓA ĐƠN
      * ========================================================== */
-    public static function detailSeller(int $sellerId): array|false{
-        $sql = "SELECT si.*, p.code, p.barcode, p.name, p.stock, p.unit_name FROM seller_items si INNER JOIN products p
-                ON p.id = si.product_id WHERE si.seller_id = ? ORDER BY si.id ASC";
-        return self::dynamicQuery($sql, [$sellerId]);
+    public static function getSellerItems($id){
+        $sql = "
+            SELECT
+                si.product_id,
+                p.code  AS product_code,
+                p.name  AS product_name,
+                u.name  AS unit_name,
+                si.qty,
+                si.price,
+                si.discount,
+                si.final_price,
+                si.total
+            FROM seller_items si
+            INNER JOIN products p
+                ON p.id = si.product_id
+            LEFT JOIN dm_units u
+                ON u.id = p.unit_id
+            WHERE si.seller_id = ?
+            ORDER BY si.id ASC
+        ";
+
+        return self::dynamicQuery($sql,[$id]);
     }
 
     /* ==========================================================
@@ -244,11 +262,6 @@ class Sellers extends Model{
         if ($summary['header']['paid_amount'] <= 0) {
             return;
         }
-        /*$payment = [
-            'seller_id' => $sellerId,
-            'method' => self::normalizePayment((int)$input['method']),
-            'amount' => $summary['header']['paid_amount']
-        ];*/
         if(($summary['payment']['cash_amount'] ?? 0) > 0){
             $payment = [
                 'seller_id' => $sellerId,

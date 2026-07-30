@@ -19,6 +19,7 @@ $router->get('/imports/details/{id}', 'ImportsController@details');
 /**Bán hàng */
 $router->get('/sellers', 'SellersController@index');
 $router->post('/sellers', 'SellersController@add');
+$router->get('/sellers/details/{id}', 'SellersController@details');
 /**Combo dữ liệu */
 $router->get('/units/combo', 'UnitsController@combo');
 $router->get('/categories/combo', 'CategoriesController@combo');
