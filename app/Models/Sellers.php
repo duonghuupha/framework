@@ -63,8 +63,6 @@ class Sellers extends Model{
                 'params' => [$dateFrom, $dateTo]
             ];
         }
-
-        $params['order'] ??= ['id' => 'DESC'];
         return self::paginateAdv(static::$view, $params);
     }
 
@@ -268,6 +266,10 @@ class Sellers extends Model{
                 'method' => self::normalizePayment(1),
                 'amount' => $summary['payment']['cash_amount']
             ];
+            $result = self::insertTo(static::$table_payment, $payment);
+            if (!$result) {
+                throw new Exception("Không lưu được thông tin thanh toán.");
+            }
         }
         if(($summary['payment']['bank_amount'] ?? 0) > 0){
             $payment = [
@@ -275,10 +277,10 @@ class Sellers extends Model{
                 'method' => self::normalizePayment(2),
                 'amount' => $summary['payment']['bank_amount']
             ];
-        }
-        $result = self::insertTo(static::$table_payment, $payment);
-        if (!$result) {
-            throw new Exception("Không lưu được thông tin thanh toán.");
+            $result = self::insertTo(static::$table_payment, $payment);
+            if (!$result) {
+                throw new Exception("Không lưu được thông tin thanh toán.");
+            }
         }
     }
 
@@ -308,7 +310,6 @@ class Sellers extends Model{
         $header = [
             'code' => $input['code'],
             'customer_id' => $input['customer_id'] ?? null,
-            'created_at' => $input['date_seller'],
             'note' => $input['note'] ?? '',
             'total_amount' => $summary['header']['total_amount'], // tong tien truoc giam
             'discount_amount' => $summary['header']['discount_amount'], // giam gia
