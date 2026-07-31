@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jul 27, 2026 at 05:13 AM
+-- Generation Time: Jul 31, 2026 at 04:04 PM
 -- Server version: 8.0.46-0ubuntu0.24.04.3
 -- PHP Version: 8.3.32
 
@@ -3747,6 +3747,7 @@ INSERT INTO `import_items` (`id`, `import_id`, `product_id`, `qty`, `price`, `to
 DELIMITER $$
 CREATE TRIGGER `trg_import_stock` AFTER INSERT ON `import_items` FOR EACH ROW UPDATE products SET stock = stock + NEW.qty WHERE id = NEW.product_id
 $$
+$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -3784,15 +3785,13 @@ DELIMITER $$
 CREATE TRIGGER `trg_internal_stock` AFTER INSERT ON `internal_transfer_items` FOR EACH ROW BEGIN
     UPDATE products 
     SET stock = stock - NEW.qty_from 
-    WHERE id = NEW.product_from_id;
-END$$
+    WHERE id = NEW.product_from_id$$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `trg_internal_stock_delete` AFTER DELETE ON `internal_transfer_items` FOR EACH ROW BEGIN
     UPDATE products 
     SET stock = stock + OLD.qty_from 
-    WHERE id = OLD.product_from_id;
-END$$
+    WHERE id = OLD.product_from_id$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -4640,11 +4639,14 @@ INSERT INTO `products` (`id`, `code`, `name`, `unit_id`, `category_id`, `import_
 
 CREATE TABLE `receipts` (
   `id` int NOT NULL,
-  `seller_id` int DEFAULT NULL COMMENT 'Id hóa đơn',
+  `code` varchar(50) COLLATE utf8mb3_unicode_ci NOT NULL COMMENT 'Mã phiếu thu',
   `customer_id` int DEFAULT NULL COMMENT 'Id khách hàng',
+  `types` varchar(20) COLLATE utf8mb3_unicode_ci NOT NULL COMMENT 'Loại phiếu thu',
   `cash_amount` double DEFAULT '0' COMMENT 'Thanh toán tiền mặt',
   `bank_amount` double DEFAULT '0' COMMENT 'Thanh toán chuyển khoản',
   `total_amount` double DEFAULT NULL COMMENT 'Tổng tiền thanh toán',
+  `date_receipt` date NOT NULL COMMENT 'Ngày phiếu thu',
+  `note` text COLLATE utf8mb3_unicode_ci,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci COMMENT='Bảng phiếu thu';
 
@@ -12907,7 +12909,7 @@ CREATE TABLE `seller_items` (
   `qty` double DEFAULT NULL COMMENT 'Số lượng',
   `price` double DEFAULT NULL COMMENT 'Đơn giá (trước giảm)',
   `discount` double DEFAULT NULL COMMENT 'Giảm giá nếu có',
-  `final_price` double DEFAULT NULL COMMENT 'Tiền cho 1 sản phẩm sau giảm giá',
+  `final_price` double DEFAULT NULL COMMENT 'Đơn giá sau giảm',
   `total` double DEFAULT NULL COMMENT 'Tổng tiền sau giảm giá của tổng số sản phẩm'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
@@ -30528,6 +30530,7 @@ INSERT INTO `seller_items` (`id`, `seller_id`, `product_id`, `qty`, `price`, `di
 DELIMITER $$
 CREATE TRIGGER `trg_sell_stock` AFTER INSERT ON `seller_items` FOR EACH ROW UPDATE products SET stock = stock - NEW.qty WHERE id = NEW.product_id
 $$
+$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -38784,16 +38787,16 @@ INSERT INTO `users` (`id`, `username`, `password`, `fullname`, `active`) VALUES
 -- (See below for the actual view)
 --
 CREATE TABLE `v_imports` (
-`code` varchar(255)
-,`created_at` datetime
-,`debt_amount` double
-,`id` int
-,`note` text
-,`paid_amount` double
-,`status` varchar(20)
+`id` int
+,`code` varchar(255)
 ,`supplier_id` int
-,`supplier_name` varchar(255)
 ,`total_amount` double
+,`paid_amount` double
+,`debt_amount` double
+,`status` varchar(20)
+,`created_at` datetime
+,`note` text
+,`supplier_name` varchar(255)
 );
 
 -- --------------------------------------------------------
@@ -38803,16 +38806,16 @@ CREATE TABLE `v_imports` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_products` (
-`category_id` int
-,`category_name` varchar(255)
+`id` int
 ,`code` varchar(255)
-,`id` int
-,`import_price` double
 ,`name` varchar(255)
+,`unit_id` int
+,`category_id` int
+,`import_price` double
 ,`sell_price` double
 ,`stock` double
-,`unit_id` int
 ,`unit_name` varchar(255)
+,`category_name` varchar(255)
 );
 
 -- --------------------------------------------------------
@@ -38822,19 +38825,19 @@ CREATE TABLE `v_products` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_sellers` (
-`code` varchar(255)
-,`created_at` datetime
-,`customer_address` text
+`id` int
+,`code` varchar(255)
 ,`customer_id` int
 ,`customer_name` varchar(255)
 ,`customer_phone` varchar(50)
-,`debt_amount` double
+,`customer_address` text
+,`total_amount` double
 ,`discount_amount` double
 ,`final_amount` double
-,`id` int
 ,`paid_amount` double
+,`debt_amount` double
 ,`status` varchar(20)
-,`total_amount` double
+,`created_at` datetime
 );
 
 -- --------------------------------------------------------
@@ -39114,13 +39117,13 @@ ALTER TABLE `receipts`
 -- AUTO_INCREMENT for table `sellers`
 --
 ALTER TABLE `sellers`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8325;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8328;
 
 --
 -- AUTO_INCREMENT for table `seller_items`
 --
 ALTER TABLE `seller_items`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17590;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17594;
 
 --
 -- AUTO_INCREMENT for table `seller_payments`
