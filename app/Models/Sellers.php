@@ -105,6 +105,14 @@ class Sellers extends Model{
     }
 
     /* ==========================================================
+     * CHI TIẾT HÓA ĐƠN
+     * ========================================================== */
+    public static function getPayments($sellerId){
+        $sql = "SELECT * FROM seller_payments WHERE seller_id = ?";
+        return self::dynamicQuery($sql,[$sellerId]);
+    }
+
+    /* ==========================================================
      * TÍNH GIẢM GIÁ
      * <=100 : %
      * >100  : TIỀN

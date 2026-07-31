@@ -58,6 +58,16 @@ class SellersController extends Controller{
     }
 
     /**
+     * Phương thức thanh toán của hóa đơn
+     */
+    function details_payment(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $result = $this->sellerModel->getPayments($input['id']);
+        return $this->json($result);
+    }
+
+    /**
      * Thêm hóa đơn bán
      */
     public function add(){
