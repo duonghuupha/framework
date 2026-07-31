@@ -1,15 +1,15 @@
 <?php
-class SellersController extends Controller{
-    protected $sellerModel;
-    public function __construct(){
-        $this->sellerModel = new Sellers();
-    }
+class ReceiptsController extends Controller{
+	protected $receiptModel;
+	public function __construct(){
+		$this->receiptModel = new Receipts();
+	}
 
-    /**
-     * Danh sách hóa đơn bán
-     */
-    public function index(){
-        $payload = $this->checkToken();
+	/**
+	 * Danh sách phieu thu
+	 */
+	public function index(){
+		$payload = $this->checkToken();
         $input = Input::all();
         $date_start = $input['search']['date_start'] ?? '';
         $date_end = $input['search']['date_end'] ?? '';
@@ -43,41 +43,36 @@ class SellersController extends Controller{
             'filters' => [],
             'order' => ['id' => 'DESC']
         ];
-        $result = $this->sellerModel->listSellers($params);
+        $result = $this->receiptModel->listReceipts($params);
         return $this->json($result);
-    }
+	}
 
-    /**
-     * Chi tiết hóa đơn
-     */
-    function details(){
-        $payload = $this->checkToken();
-        $input = Input::all();
-        $result = $this->sellerModel->getSellerItems($input['id']);
-        return $this->json($result);
-    }
-
-    /**
-     * Phương thức thanh toán của hóa đơn
-     */
-    function details_payment(){
-        $payload = $this->checkToken();
-        $input = Input::all();
-        $result = $this->sellerModel->getPayments($input['id']);
-        return $this->json($result);
-    }
-
-    /**
-     * Thêm hóa đơn bán
-     */
-    public function add(){
+	/**
+	 * Thêm mới phieu thu
+	 */
+	public function add(){
         try {
             $this->checkToken();
             $input = Input::all();
-            $sellerId = $this->sellerModel->createSeller($input);
-            return $this->json(['id' => $sellerId]);
+            $receiptId = $this->receiptModel->createReceipt($input);
+            return $this->json(['id' => $receiptId]);
         } catch (Exception $e) {
-            return $this->json([], 'error', $e->getMessage());
+            return $this->json([],'error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Cập nhật phiếu thu
+     */
+    public function update(){
+        try {
+            $this->checkToken();
+            $input = Input::all();
+            $result = $this->receiptModel->updateReceipt((int) $input['id'], $input);
+            return $this->json(['result' => $result]);
+        } catch (Exception $e) {
+            return $this->json([],'error', $e->getMessage());
         }
     }
 }
+?>

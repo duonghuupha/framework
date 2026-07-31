@@ -21,6 +21,10 @@ $router->get('/sellers', 'SellersController@index');
 $router->post('/sellers', 'SellersController@add');
 $router->get('/sellers/details/{id}', 'SellersController@details');
 $router->get('/sellers/details_payment/{id}', 'SellersController@details_payment');
+/**Phiếu thu */
+$router->get('/receipts', 'ReceiptsController@index');
+$router->post('/receipts', 'ReceiptsController@add');
+$router->put('/receipts/{id}', 'ReceiptsController@update');
 /**Combo dữ liệu */
 $router->get('/units/combo', 'UnitsController@combo');
 $router->get('/categories/combo', 'CategoriesController@combo');
