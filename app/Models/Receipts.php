@@ -17,7 +17,7 @@ class Receipts extends Model{
 					'code', 'customer_name'
 				]
 			],
-			'filters' => $params['filters'] ?? [].
+			'filters' => $params['filters'] ?? [],
 			'order' => $params['order'] ?? 'date_receipt DESC'
 		];
 		return self::paginateAdv(static::$view, $params);
