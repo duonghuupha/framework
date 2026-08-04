@@ -36,7 +36,6 @@ class ReceiptsController extends Controller{
             'search' => [
                 'code' => $input['search']['code'] ?? '',
                 'customer' => $input['search']['customer'] ?? '',
-                'product' => $input['search']['product'] ?? '',
                 'date_start' => $date_from,
                 'date_end' => $date_to
             ],

@@ -36,12 +36,22 @@ class Customer extends Model{
         return self::dynamicQuery($sql, $params);
     }
 
-    public static function getDebtCustomer(int $customerId): float{
-        $customer = self::find($customerId);
-        if (empty($customer)) {
-            return 0;
-        }
-        return (float)($customer['debt_total'] ?? 0);
+    public static function getDebtCustomer(int $customerId): array{
+        // tong cong no phat sinh
+        $sqlSeller = "SELECT COALESCE(SUM(debt_amount), 0) total FROM sellers WHERE customer_id = ?";
+        $seller = self::dynamicQuery($sqlSeller, [$customerId]);
+        $sellerDebt = (float)($seller[0]['total'] ?? 0);
+
+        // tong tien da thu cong no
+        $sqlReceipt = "SELECT COALESCE(SUM(total_amount), 0) total FROM receipts WHERE customer_id = ? AND types = 'debt'";
+        $receipt = self::dynamicQuery($sqlReceipt, [$customerId]);
+        $receiptAmount = (float)($receipt[0]['total'] ?? 0);
+
+        return [
+            'seller_debt' => $sellerDebt,
+            'receipt_amount' => $receiptAmount,
+            'current_debt' => $sellerDebt - $receiptAmount
+        ];
     }
 }
 ?>

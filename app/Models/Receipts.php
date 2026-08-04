@@ -8,18 +8,40 @@ class Receipts extends Model{
 	 * Danh sach phieu thu
 	 */
 	public static function listReceipts(array $params = []): array {
-		$params = [
-			'page' => $params['page'] ?? 1,
-			'limit' => $params['limit'] ?? 20,
-			'search' => [
-				'keyword' => $params['search'] ?? '',
-				'columns' => [
-					'code', 'customer_name'
+		$code = trim($params['search']['code'] ?? '');
+		$customer = trim($params['search']['code'] ?? '');
+		$dateFrom = $params['search']['date_start'] ?? '';
+		$dateTo = $params['search']['date_end'] ?? '';
+		unset(
+			$params['search']['code'],
+			$params['search']['customer'],	
+			$params['search']['date_start'],
+			$params['search']['date_end']
+		);
+		if($code !== ''){
+			$params['advanced'][] = [
+				'type' => 'raw',
+				'sql' => 'code LIKE ?',
+				'params' => ["%$code%"]
+			];
+		}
+		if($customer !== ''){
+			$params['advanced'][] = [
+				'type' => 'raw',
+				'sql' => '(customer_name LIKE ? OR customer_phone LIKE ?)',
+				'params' => [
+					"%$customer%",
+					"%$customer%"
 				]
-			],
-			'filters' => $params['filters'] ?? [],
-			'order' => $params['order'] ?? 'date_receipt DESC'
-		];
+			];
+		}
+		if ($dateFrom && $dateTo) {
+            $params['advanced'][] = [
+                'type'   => 'raw',
+                'sql'    => 'DATE(date_receipt) BETWEEN ? AND ?',
+                'params' => [$dateFrom, $dateTo]
+            ];
+        }
 		return self::paginateAdv(static::$view, $params);
 	}
 
@@ -60,6 +82,17 @@ class Receipts extends Model{
 			throw new Exception("Tổng tiền thu phải lớn hơn 0");
 		}
 
+		$datereceipt = trim($data['date_receipt'] ?? '');
+		if(!empty($datereceipt)){
+			$objectDate = DateTime::createFromFormat('d/m/Y', $datereceipt);
+			if(!$objectDate){
+				throw new Exception("Ngày phiếu thu không hợp lệ");
+			}
+			$datereceipt = $objectDate->format('Y-m-d');
+		}else{
+			$datereceipt = date("Y-m-d");
+		}
+
 		$receiptData = [
 			'code' => $code,
 			'customer_id' => $data['customer_id'] ?? null,
@@ -67,12 +100,12 @@ class Receipts extends Model{
 			'cash_amount' => $cashAmount,
 			'bank_amount' => $bankAmount,
 			'total_amount' => $totalAmount,
-			'date_receipt' => $data['date_receipt'] ?? date('Y-m-d'),
+			'date_receipt' => $datereceipt,
 			'note' => trim($data['note'] ?? '') 
 		];
 
 		$result = self::insertTo('receipts', $receiptData);
-		if(!result){
+		if(!$result){
 			throw new Exception("Không thể tạo phiếu thu");
 		}
 		return $result;
@@ -108,20 +141,31 @@ class Receipts extends Model{
 			throw new Exception("TỔng tiền phải lớn hơn 0");
 		}
 
+		$datereceipt = trim($data['date_receipt'] ?? '');
+		if(!empty($datereceipt)){
+			$objectDate = DateTime::createFromFormat('d/m/Y', $datereceipt);
+			if(!$objectDate){
+				throw new Exception("Ngày phiếu thu không hợp lệ");
+			}
+			$datereceipt = $objectDate->format('Y-m-d');
+		}else{
+			$datereceipt = date("Y-m-d");
+		}
+
 		$receiptData = [
 			'code'         => $code,
 	        'customer_id'  => $data['customer_id'] ?? null,
-	        'type'         => $data['type'] ?? 'debt',
+	        'types'         => $data['type'] ?? 'debt',
 
 	        'cash_amount'  => $cashAmount,
 	        'bank_amount'  => $bankAmount,
 	        'total_amount' => $totalAmount,
 
-	        'date_receipt' => $data['date_receipt'] ?? date('Y-m-d'),
+	        'date_receipt' => $datereceipt,
 	        'note'         => trim($data['note'] ?? ''),
 		];
 
-		$result = self::updateTo('receipts', $receiptData, ['id' => $id]);
+		$result = self::update($id, $receiptData);
 		if(!$result){
 			throw new Exception("Không thẻ cập nhật phiếu thu");
 		}

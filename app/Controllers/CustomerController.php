@@ -74,16 +74,12 @@ class CustomerController extends Controller{
     }
 
     public function debt($id){
-        $this->checkToken();
+        $payload = $this->checkToken();
         if (empty($id)) {
             return $this->json([], 'error', 'Thiếu khách hàng.');
         }
-        $debt = $this->customerModel->getDebtCustomer($id);
-        $data = [
-            "customer_id" => $id,
-            "debt" => $debt
-        ];
-        return $this->json(['debt' => $debt]);
+        $result = $this->customerModel->getDebtCustomer($id);
+        return $this->json($result);
     }  
 }
 ?>
