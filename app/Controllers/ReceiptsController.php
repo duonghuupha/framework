@@ -73,5 +73,24 @@ class ReceiptsController extends Controller{
             return $this->json([],'error', $e->getMessage());
         }
     }
+
+    /**
+     * hủy phiếu thu
+     */
+    public function cancelReceipt($id){
+        try{
+            $payload = $this->checkToken();
+            $input = Input::all();
+            $reason = trim($input['data'] ?? '');
+            if($reason === ''){
+                throw new Exception("Vui lòng nhập lý do hủy phiếu");
+            }
+            // lay nguoi dung dang nhap
+            $result = $this->receiptModel->cancelReceipt($id, $reason, $payload['user_id']);
+            return $this->json(['result' => $result]);
+        }catch(Exception $e){
+            return $this->json([], 'error', $e->getMessage());  
+        }
+    }
 }
 ?>

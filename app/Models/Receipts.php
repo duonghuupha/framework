@@ -101,7 +101,8 @@ class Receipts extends Model{
 			'bank_amount' => $bankAmount,
 			'total_amount' => $totalAmount,
 			'date_receipt' => $datereceipt,
-			'note' => trim($data['note'] ?? '') 
+			'note' => trim($data['note'] ?? '') ,
+			'status' => 1
 		];
 
 		$result = self::insertTo('receipts', $receiptData);
@@ -171,6 +172,64 @@ class Receipts extends Model{
 		}
 
 		return $result;
+	}
+//===========================================================================//
+//===========================================================================//
+	private function getReceiptById($id){
+		return self::find($id);
+	}
+
+	private function checkReceiptCanCancel(array $receipt){
+		if(!$receipt){
+			throw new Exception("Phiếu thu không tồn tại");
+		}
+
+		if((int)$receipt['status'] === 0){
+			throw new Exception("Phiếu thu đã được hủy");
+		}
+		return true;
+
+		// Gia doan 2 - sau nay se bo sung
+		//LockService::check($receipt['date_receipt']);
+		//$this->checkReference($receipt['id']);
+	}
+
+	private function updateReceiptStatus($receiptId, $status){
+		$result = self::update($receiptId, ['status' => $status]);
+		if(!$result){
+			throw new Exception("Không thể cập nhật trạng thái phiếu thu");
+		}
+		return true;
+	}
+
+	private function insertReceiptCancel($receiptId, $reason, $userId){
+		$data = [
+			'receipt_id' => $receiptId,
+			'cancel_by' => $userId,
+			'cancel_at' => date("Y-m-d H:i:s"),
+			'reason' => trim($reason)
+		];
+		$result = self::insertTo('receipt_cancel', $data);
+		if(!$result){
+			throw new Exception("Không thể lưu lịch sử hủy phiếu thu");
+		}
+		return true;
+	}
+
+	public function cancelReceipt($id, $reason, $userId){
+		self::beginTransaction();
+		try{
+			$receipt = self::getReceiptById($id);
+			self::checkReceiptCanCancel($receipt);
+			self::updateReceiptStatus($id, 0);
+			self::insertReceiptCancel($id, $reason, $userId);
+			self::commit();
+			return $id;
+			//return $receipt;
+		}catch(Exception $e){
+			self::rollback();
+			throw $e;
+		}
 	}
 }
 ?>
