@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jul 31, 2026 at 04:04 PM
+-- Generation Time: Aug 06, 2026 at 08:45 AM
 -- Server version: 8.0.46-0ubuntu0.24.04.3
 -- PHP Version: 8.3.32
 
@@ -1442,12 +1442,31 @@ INSERT INTO `dm_units` (`id`, `name`) VALUES
 
 CREATE TABLE `expenses` (
   `id` int NOT NULL,
-  `import_id` int DEFAULT NULL,
+  `code` varchar(50) COLLATE utf8mb3_unicode_ci NOT NULL COMMENT 'Mã phiếu chi',
+  `types` varchar(20) COLLATE utf8mb3_unicode_ci DEFAULT NULL COMMENT 'Loại phiếu thu',
   `supplier_id` int DEFAULT NULL,
-  `amount` double DEFAULT NULL,
-  `content` text COLLATE utf8mb3_unicode_ci,
+  `cash_amount` double NOT NULL COMMENT 'Chi tiền mặt',
+  `bank_amount` double NOT NULL COMMENT 'Chi chuyển khoản',
+  `total_amount` double NOT NULL COMMENT 'Tổng chi',
+  `date_expense` date NOT NULL COMMENT 'Ngày chi',
+  `note` text CHARACTER SET utf8mb3 COLLATE utf8mb3_unicode_ci,
+  `status` tinyint NOT NULL DEFAULT '1',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `expense_cancel`
+--
+
+CREATE TABLE `expense_cancel` (
+  `id` int NOT NULL,
+  `expense_id` int NOT NULL,
+  `cancel_by` int NOT NULL,
+  `cancel_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -3747,6 +3766,7 @@ INSERT INTO `import_items` (`id`, `import_id`, `product_id`, `qty`, `price`, `to
 DELIMITER $$
 CREATE TRIGGER `trg_import_stock` AFTER INSERT ON `import_items` FOR EACH ROW UPDATE products SET stock = stock + NEW.qty WHERE id = NEW.product_id
 $$
+$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -3784,15 +3804,13 @@ DELIMITER $$
 CREATE TRIGGER `trg_internal_stock` AFTER INSERT ON `internal_transfer_items` FOR EACH ROW BEGIN
     UPDATE products 
     SET stock = stock - NEW.qty_from 
-    WHERE id = NEW.product_from_id;
-  END$$
+    WHERE id = NEW.product_from_id$$
 DELIMITER ;
 DELIMITER $$
 CREATE TRIGGER `trg_internal_stock_delete` AFTER DELETE ON `internal_transfer_items` FOR EACH ROW BEGIN
     UPDATE products 
     SET stock = stock + OLD.qty_from 
-    WHERE id = OLD.product_from_id;
-  END$$
+    WHERE id = OLD.product_from_id$$
 DELIMITER ;
 
 -- --------------------------------------------------------
@@ -3834,8 +3852,8 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `code`, `name`, `unit_id`, `category_id`, `import_price`, `sell_price`, `stock`, `is_active`) VALUES
-(8, '624156', 'Pate Snappy Tom 400g', 11, 2, 28000, 35000, 93, 1),
-(9, '287897', 'Pate Whiskas lon', 11, 2, 33900, 45000, 51, 1),
+(8, '624156', 'Pate Snappy Tom 400g', 11, 2, 28000, 35000, 91, 1),
+(9, '287897', 'Pate Whiskas lon', 11, 2, 33900, 45000, 49, 1),
 (10, '415289', 'Catsrang lẻ', 9, 2, 68000, 95000, -98, 1),
 (11, '184404', 'CatsEye lẻ', 9, 2, 60000, 85000, 16, 1),
 (12, '237047', 'Doby', 9, 1, 25000, 60000, 1, 1),
@@ -4648,8 +4666,39 @@ CREATE TABLE `receipts` (
   `total_amount` double DEFAULT NULL COMMENT 'Tổng tiền thanh toán',
   `date_receipt` date NOT NULL COMMENT 'Ngày phiếu thu',
   `note` text COLLATE utf8mb3_unicode_ci,
+  `status` tinyint NOT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci COMMENT='Bảng phiếu thu';
+
+--
+-- Dumping data for table `receipts`
+--
+
+INSERT INTO `receipts` (`id`, `code`, `customer_id`, `types`, `cash_amount`, `bank_amount`, `total_amount`, `date_receipt`, `note`, `status`, `created_at`) VALUES
+(1, 'PT-20260803-7YUL', 2, 'debt', 500000, 0, 500000, '2026-08-03', 'Thanh toán hóa đơn mua hàng', 1, '2026-08-03 09:28:19'),
+(2, 'PT-20260803-OQ9V', 3, 'debt', 500000, 0, 500000, '2026-08-03', 'Thanh thoán hóa đơn mua hàng 1', 0, '2026-08-03 09:29:01'),
+(3, 'PT-20260806-LBO8', 3, 'debt', 80000, 0, 80000, '2026-08-06', 'Thu tiền khách hàng thanh toán hóa đơn đã mua', 1, '2026-08-06 08:48:11');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `receipt_cancel`
+--
+
+CREATE TABLE `receipt_cancel` (
+  `id` int NOT NULL,
+  `receipt_id` int NOT NULL,
+  `cancel_by` int NOT NULL,
+  `cancel_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `reason` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `receipt_cancel`
+--
+
+INSERT INTO `receipt_cancel` (`id`, `receipt_id`, `cancel_by`, `cancel_at`, `reason`) VALUES
+(3, 2, 1, '2026-08-06 08:41:37', 'Chọn sai khách hàng');
 
 -- --------------------------------------------------------
 
@@ -12895,7 +12944,8 @@ INSERT INTO `sellers` (`id`, `code`, `customer_id`, `total_amount`, `discount_am
 (8321, 'HD-872745', 1208, 550000, 0, 550000, 550000, 0, 'completed', '', '2025-10-31 15:34:05'),
 (8322, 'HD-524059', 497, 390000, 0, 390000, 390000, 0, 'completed', '', '2025-10-31 17:57:15'),
 (8323, 'HD-515539', 1113, 108000, 0, 108000, 110000, -2000, 'completed', '', '2025-10-31 19:40:02'),
-(8324, 'HD-522868', 1205, 150000, 0, 150000, 150000, 0, 'completed', '', '2025-10-31 19:40:59');
+(8324, 'HD-522868', 1205, 150000, 0, 150000, 150000, 0, 'completed', '', '2025-10-31 19:40:59'),
+(8328, 'HĐ-20260804-ZYTH', 3, 80000, 0, 80000, 0, 80000, 'debt', '', '2026-08-04 15:57:58');
 
 -- --------------------------------------------------------
 
@@ -30523,7 +30573,9 @@ INSERT INTO `seller_items` (`id`, `seller_id`, `product_id`, `qty`, `price`, `di
 (17586, 8322, 859, 10, 9000, 0, 9000, 90000),
 (17587, 8323, 859, 8, 9000, 0, 9000, 72000),
 (17588, 8323, 520, 2, 18000, 0, 18000, 36000),
-(17589, 8324, 208, 1, 150000, 0, 150000, 150000);
+(17589, 8324, 208, 1, 150000, 0, 150000, 150000),
+(17594, 8328, 8, 1, 35000, 0, 35000, 35000),
+(17595, 8328, 9, 1, 45000, 0, 45000, 45000);
 
 --
 -- Triggers `seller_items`
@@ -38784,6 +38836,29 @@ INSERT INTO `users` (`id`, `username`, `password`, `fullname`, `active`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Stand-in structure for view `v_expenses`
+-- (See below for the actual view)
+--
+CREATE TABLE `v_expenses` (
+`id` int
+,`code` varchar(50)
+,`status` tinyint
+,`types` varchar(20)
+,`supplier_id` int
+,`supplier_name` varchar(255)
+,`supplier_phone` varchar(50)
+,`supplier_address` text
+,`cash_amount` double
+,`bank_amount` double
+,`total_amount` double
+,`date_expense` date
+,`note` text
+,`created_at` datetime
+);
+
+-- --------------------------------------------------------
+
+--
 -- Stand-in structure for view `v_imports`
 -- (See below for the actual view)
 --
@@ -38822,6 +38897,29 @@ CREATE TABLE `v_products` (
 -- --------------------------------------------------------
 
 --
+-- Stand-in structure for view `v_receipts`
+-- (See below for the actual view)
+--
+CREATE TABLE `v_receipts` (
+`id` int
+,`code` varchar(50)
+,`customer_id` int
+,`customer_name` varchar(255)
+,`customer_phone` varchar(50)
+,`customer_address` text
+,`types` varchar(20)
+,`cash_amount` double
+,`bank_amount` double
+,`total_amount` double
+,`date_receipt` date
+,`note` text
+,`status` tinyint
+,`created_at` datetime
+);
+
+-- --------------------------------------------------------
+
+--
 -- Stand-in structure for view `v_sellers`
 -- (See below for the actual view)
 --
@@ -38844,6 +38942,15 @@ CREATE TABLE `v_sellers` (
 -- --------------------------------------------------------
 
 --
+-- Structure for view `v_expenses`
+--
+DROP TABLE IF EXISTS `v_expenses`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`admin`@`localhost` SQL SECURITY DEFINER VIEW `v_expenses`  AS SELECT `p`.`id` AS `id`, `p`.`code` AS `code`, `p`.`status` AS `status`, `p`.`types` AS `types`, `p`.`supplier_id` AS `supplier_id`, `s`.`name` AS `supplier_name`, `s`.`phone` AS `supplier_phone`, `s`.`address` AS `supplier_address`, `p`.`cash_amount` AS `cash_amount`, `p`.`bank_amount` AS `bank_amount`, `p`.`total_amount` AS `total_amount`, `p`.`date_expense` AS `date_expense`, `p`.`note` AS `note`, `p`.`created_at` AS `created_at` FROM (`expenses` `p` left join `dm_suppliers` `s` on((`s`.`id` = `p`.`supplier_id`))) ;
+
+-- --------------------------------------------------------
+
+--
 -- Structure for view `v_imports`
 --
 DROP TABLE IF EXISTS `v_imports`;
@@ -38858,6 +38965,15 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 DROP TABLE IF EXISTS `v_products`;
 
 CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_products`  AS SELECT `p`.`id` AS `id`, `p`.`code` AS `code`, `p`.`name` AS `name`, `p`.`unit_id` AS `unit_id`, `p`.`category_id` AS `category_id`, `p`.`import_price` AS `import_price`, `p`.`sell_price` AS `sell_price`, `p`.`stock` AS `stock`, `u`.`name` AS `unit_name`, `c`.`name` AS `category_name` FROM ((`products` `p` left join `dm_units` `u` on((`u`.`id` = `p`.`unit_id`))) left join `dm_categories` `c` on((`c`.`id` = `p`.`category_id`))) ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure for view `v_receipts`
+--
+DROP TABLE IF EXISTS `v_receipts`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`admin`@`localhost` SQL SECURITY DEFINER VIEW `v_receipts`  AS SELECT `r`.`id` AS `id`, `r`.`code` AS `code`, `r`.`customer_id` AS `customer_id`, `c`.`name` AS `customer_name`, `c`.`phone` AS `customer_phone`, `c`.`address` AS `customer_address`, `r`.`types` AS `types`, `r`.`cash_amount` AS `cash_amount`, `r`.`bank_amount` AS `bank_amount`, `r`.`total_amount` AS `total_amount`, `r`.`date_receipt` AS `date_receipt`, `r`.`note` AS `note`, `r`.`status` AS `status`, `r`.`created_at` AS `created_at` FROM (`receipts` `r` left join `customers` `c` on((`c`.`id` = `r`.`customer_id`))) ;
 
 -- --------------------------------------------------------
 
@@ -38933,6 +39049,14 @@ ALTER TABLE `expenses`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `expense_cancel`
+--
+ALTER TABLE `expense_cancel`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_receipt` (`expense_id`),
+  ADD KEY `idx_cancel_by` (`cancel_by`);
+
+--
 -- Indexes for table `imports`
 --
 ALTER TABLE `imports`
@@ -38979,6 +39103,14 @@ ALTER TABLE `products`
 --
 ALTER TABLE `receipts`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `receipt_cancel`
+--
+ALTER TABLE `receipt_cancel`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_receipt` (`receipt_id`),
+  ADD KEY `idx_cancel_by` (`cancel_by`);
 
 --
 -- Indexes for table `sellers`
@@ -39073,6 +39205,12 @@ ALTER TABLE `expenses`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `expense_cancel`
+--
+ALTER TABLE `expense_cancel`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `imports`
 --
 ALTER TABLE `imports`
@@ -39112,19 +39250,25 @@ ALTER TABLE `products`
 -- AUTO_INCREMENT for table `receipts`
 --
 ALTER TABLE `receipts`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `receipt_cancel`
+--
+ALTER TABLE `receipt_cancel`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `sellers`
 --
 ALTER TABLE `sellers`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8328;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8329;
 
 --
 -- AUTO_INCREMENT for table `seller_items`
 --
 ALTER TABLE `seller_items`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17594;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17596;
 
 --
 -- AUTO_INCREMENT for table `seller_payments`
@@ -39137,6 +39281,16 @@ ALTER TABLE `seller_payments`
 --
 ALTER TABLE `users`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `receipt_cancel`
+--
+ALTER TABLE `receipt_cancel`
+  ADD CONSTRAINT `fk_receipt_cancel_receipt` FOREIGN KEY (`receipt_id`) REFERENCES `receipts` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

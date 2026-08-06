@@ -9,7 +9,7 @@ class Receipts extends Model{
 	 */
 	public static function listReceipts(array $params = []): array {
 		$code = trim($params['search']['code'] ?? '');
-		$customer = trim($params['search']['code'] ?? '');
+		$customer = trim($params['search']['customer'] ?? '');
 		$dateFrom = $params['search']['date_start'] ?? '';
 		$dateTo = $params['search']['date_end'] ?? '';
 		unset(
@@ -18,6 +18,12 @@ class Receipts extends Model{
 			$params['search']['date_start'],
 			$params['search']['date_end']
 		);
+		// chi lay phieu dang hoat dong
+		$params['advanced'][] = [
+			'type' => 'raw',
+			'sql' => 'status = ?',
+			'params' => [1]
+		];
 		if($code !== ''){
 			$params['advanced'][] = [
 				'type' => 'raw',

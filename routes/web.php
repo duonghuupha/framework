@@ -26,6 +26,11 @@ $router->get('/receipts', 'ReceiptsController@index');
 $router->post('/receipts', 'ReceiptsController@add');
 //$router->put('/receipts/{id}', 'ReceiptsController@update');
 $router->put('/receipts/{id}', 'ReceiptsController@cancelReceipt');
+/**Phiếu chi */
+$router->get('/expenses', 'ExpensesController@index');
+$router->post('/expenses', 'ExpensesController@add');
+//$router->put('/expenses/{id}', 'ExpensesController@update');
+$router->put('/expenses/{id}', 'ExpensesController@cancelReceipt');
 /**Combo dữ liệu */
 $router->get('/units/combo', 'UnitsController@combo');
 $router->get('/categories/combo', 'CategoriesController@combo');
@@ -33,6 +38,7 @@ $router->get('/manufacturer/combo', 'ManufacturerController@combo');
 $router->get('/products/combo', 'ProductsController@combo');
 $router->get('/customer/combo', 'CustomerController@combo');
 /**Các API khác*/
+$router->get('/customer/{id}/debt', 'CustomerController@debt');
 $router->get('/customer/{id}/debt', 'CustomerController@debt');
 
 // Route test nhanh

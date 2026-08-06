@@ -43,7 +43,7 @@ class Customer extends Model{
         $sellerDebt = (float)($seller[0]['total'] ?? 0);
 
         // tong tien da thu cong no
-        $sqlReceipt = "SELECT COALESCE(SUM(total_amount), 0) total FROM receipts WHERE customer_id = ? AND types = 'debt'";
+        $sqlReceipt = "SELECT COALESCE(SUM(total_amount), 0) total FROM receipts WHERE customer_id = ? AND types = 'debt' AND status = 1";
         $receipt = self::dynamicQuery($sqlReceipt, [$customerId]);
         $receiptAmount = (float)($receipt[0]['total'] ?? 0);
 
