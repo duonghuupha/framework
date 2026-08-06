@@ -29,13 +29,13 @@ class Expenses extends Model{
 				'params' => ["%$code%"]
 			];
 		}
-		if($customer !== ''){
+		if($supplier !== ''){
 			$params['advanced'][] = [
 				'type' => 'raw',
 				'sql' => '(supplier_name LIKE ? OR supplier_phone LIKE ?)',
 				'params' => [
-					"%$customer%",
-					"%$customer%"
+					"%$supplier%",
+					"%$supplier%"
 				]
 			];
 		}
@@ -46,7 +46,7 @@ class Expenses extends Model{
                 'params' => [$dateFrom, $dateTo]
             ];
         }
-        return seft::paginationAdv(static::$view, $params);
+        return self::paginateAdv(static::$view, $params);
 	}
 
 	/**
@@ -54,7 +54,7 @@ class Expenses extends Model{
 	 */
 	public static function checlDublicateCode(string $code, ?int $expenseId = 0) : array|false{
 		if($expenseId == 0){
-			return seft::where("code", $code);
+			return self::where("code", $code);
 		}
 		$sql = "SELECT * FROM expenses WHERE code = ? AND id <> ?";
 		return self::dynamicQuery($sql, [$code, $expenseId]);
@@ -70,7 +70,7 @@ class Expenses extends Model{
 		}
 
 		// check trung ma
-		if(self::checkDulicateCode($code)){
+		if(self::checlDublicateCode($code)){
 			throw new Exception("Mã phiếu chi đã tồn tại");
 		}
 
@@ -101,7 +101,7 @@ class Expenses extends Model{
 			'code' => $code,
 			'supplier_id' => $data['supplier_id'] ?? null,
 			'types' => $data['types'],
-			'cash_amount' => $cashAmount
+			'cash_amount' => $cashAmount,
 			'bank_amount' => $bankAmount,
 			'total_amount' => $totalAmount,
 			'date_expense' => $dateexpense,
@@ -109,7 +109,7 @@ class Expenses extends Model{
 			'status' => 1
 		];
 
-		$result = seft::insertTo('expenses', $extendData);
+		$result = self::insertTo('expenses', $expenseData);
 		if(!$result){
 			throw new Exception("KHông thể tạo phiếu chi");
 		}
@@ -133,7 +133,7 @@ class Expenses extends Model{
 	}
 
 	private function updateExpenseStatus($expenseId, $status){
-		$result = seft::update($expenseId, ['status' => $status]);
+		$result = self::update($expenseId, ['status' => $status]);
 		if(!$result){
 			throw new Exception("Không thể cập nhật trạng tháu phiếu chi");
 		}
@@ -147,8 +147,8 @@ class Expenses extends Model{
 			'cancel_at' => date("Y-m-d H:i:s"),
 			'reason' => $reason
 		];
-		$result = self::insertTo('expenses', $data);
-		if($result){
+		$result = self::insertTo('expense_cancel', $data);
+		if(!$result){
 			throw new Exception("Không thể lưu lịch sử hủy phiếu chi");
 		}
 		return true;
@@ -164,7 +164,7 @@ class Expenses extends Model{
 			self::commit();
 			return $id;
 		}catch(Exception $e){
-			seft::rollback();
+			self::rollback();
 			throw $e;
 		}
 	}

@@ -62,14 +62,14 @@ class ExpensesController extends Controller{
 	 */
 	public function cancelExpense($id){
 		try{
-			$paload = $this->checkToken();
+			$payload = $this->checkToken();
 			$input = Input::all();
 			$reason = trim($input['data'] ?? '');
 			if($reason === ''){
 				throw new Exception("Vui lòng nhập lý do hủy phiếu");
 			}
-			$result = $this->cancelExpense($id, $reason, $payload['user_id']);
-			return $this->json['result' => $result];
+			$result = $this->expenseModel->cancelExpense($id, $reason, $payload['user_id']);
+			return $this->json(['result' => $result]);
 		}catch(Exception $e){	
 			return $this->json([], 'error', $e->getMessage());
 		}

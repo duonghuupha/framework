@@ -30,7 +30,7 @@ $router->put('/receipts/{id}', 'ReceiptsController@cancelReceipt');
 $router->get('/expenses', 'ExpensesController@index');
 $router->post('/expenses', 'ExpensesController@add');
 //$router->put('/expenses/{id}', 'ExpensesController@update');
-$router->put('/expenses/{id}', 'ExpensesController@cancelReceipt');
+$router->put('/expenses/{id}', 'ExpensesController@cancelExpense');
 /**Combo dữ liệu */
 $router->get('/units/combo', 'UnitsController@combo');
 $router->get('/categories/combo', 'CategoriesController@combo');
@@ -39,7 +39,7 @@ $router->get('/products/combo', 'ProductsController@combo');
 $router->get('/customer/combo', 'CustomerController@combo');
 /**Các API khác*/
 $router->get('/customer/{id}/debt', 'CustomerController@debt');
-$router->get('/customer/{id}/debt', 'CustomerController@debt');
+$router->get('/manufacturer/{id}/debt', 'ManufacturerController@debt');
 
 // Route test nhanh
 $router->setNotFound(function() {
