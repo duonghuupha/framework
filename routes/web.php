@@ -2,6 +2,16 @@
 $router->get('/clearCache', 'HomeController@clearCache', ['cache' => 300]); // cache 5 phút
 $router->post('/login', 'AuthController@login');
 $router->post('/logout', 'AuthController@logout');
+/**Dùng chung*/
+$router->get('/categories', 'CategoriesController@index');
+$router->post('/categories', 'CategoriesController@add');
+$router->put('/categories/{id}', 'CategoriesController@update');
+$router->delete('/categories/{id}', 'CategoriesController@delete');
+//==================================================================
+$router->get('/units', 'UnitsController@index');
+$router->post('/units', 'UnitsController@add');
+$router->put('/units/{id}', 'UnitsController@update');
+$router->delete('/units/{id}', 'UnitsController@delete');
 /**Sản phẩm */
 $router->get('/products', 'ProductsController@index');
 $router->post('/products', 'ProductsController@add');
@@ -24,12 +34,10 @@ $router->get('/sellers/details_payment/{id}', 'SellersController@details_payment
 /**Phiếu thu */
 $router->get('/receipts', 'ReceiptsController@index');
 $router->post('/receipts', 'ReceiptsController@add');
-//$router->put('/receipts/{id}', 'ReceiptsController@update');
 $router->put('/receipts/{id}', 'ReceiptsController@cancelReceipt');
 /**Phiếu chi */
 $router->get('/expenses', 'ExpensesController@index');
 $router->post('/expenses', 'ExpensesController@add');
-//$router->put('/expenses/{id}', 'ExpensesController@update');
 $router->put('/expenses/{id}', 'ExpensesController@cancelExpense');
 /**Combo dữ liệu */
 $router->get('/units/combo', 'UnitsController@combo');
