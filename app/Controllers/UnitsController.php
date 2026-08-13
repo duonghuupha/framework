@@ -25,7 +25,7 @@ class UnitsController extends Controller{
             'name' => $input['name'] ?? ''
         ];
         $newUnits = $this->unitsModel->addUnits($data);
-        return $this->json(['new_units_id'] => $data);
+        return $this->json(['new_units_id' => $newUnits]);
     }
 
     function update($id){
@@ -35,7 +35,7 @@ class UnitsController extends Controller{
             'name' => $input['name'] ?? ''
         ];
         $updated = $this->unitsModel->updateUnits((int)$id, $data);
-        return $this->json(['updated'] => $updated);
+        return $this->json(['updated' => $updated]);
     }
 
     function delete($id){

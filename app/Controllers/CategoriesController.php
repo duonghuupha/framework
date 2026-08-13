@@ -25,7 +25,7 @@ class CategoriesController extends Controller{
             'name' => $input['name'] ?? ''
         ];
         $newUnits = $this->categoriesModel->addCategory($data);
-        return $this->json(['new_category_id'] => $data);
+        return $this->json(['new_category_id' => $data]);
     }
 
     function update($id){
@@ -35,7 +35,7 @@ class CategoriesController extends Controller{
             'name' => $input['name'] ?? ''
         ];
         $updated = $this->categoriesModel->updateCategory((int)$id, $data);
-        return $this->json(['updated'] => $updated);
+        return $this->json(['updated' => $updated]);
     }
 
     function delete($id){
