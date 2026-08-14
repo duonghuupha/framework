@@ -14,7 +14,7 @@ class Units extends Model{
         return self::update($id, $data);
     }
 
-    public function delUnits(int $id) : int|false{
+    public function deleteUnits(int $id) : int|false{
         return self::delete($id);
     }
 
