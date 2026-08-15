@@ -7,7 +7,12 @@ $router->get('/categories', 'CategoriesController@index');
 $router->post('/categories', 'CategoriesController@add');
 $router->put('/categories/{id}', 'CategoriesController@update');
 $router->delete('/categories/{id}', 'CategoriesController@delete');
-//==================================================================
+/**giong thu cung*/
+$router->get('/petbreed', 'PetbreedController@index');
+$router->post('/petbreed', 'PetbreedController@add');
+$router->put('/petbreed/{id}', 'PetbreedController@update');
+$router->delete('/petbreed/{id}', 'PetbreedController@delete');
+//==================================================================//
 $router->get('/units', 'UnitsController@index');
 $router->post('/units', 'UnitsController@add');
 $router->put('/units/{id}', 'UnitsController@update');
@@ -45,6 +50,7 @@ $router->get('/categories/combo', 'CategoriesController@combo');
 $router->get('/manufacturer/combo', 'ManufacturerController@combo');
 $router->get('/products/combo', 'ProductsController@combo');
 $router->get('/customer/combo', 'CustomerController@combo');
+$router->get('/petbreed/combo', 'PetbreedController@combo');
 /**Các API khác*/
 $router->get('/customer/{id}/debt', 'CustomerController@debt');
 $router->get('/manufacturer/{id}/debt', 'ManufacturerController@debt');
