@@ -12,7 +12,7 @@ $router->get('/petbreed', 'PetbreedController@index');
 $router->post('/petbreed', 'PetbreedController@add');
 $router->put('/petbreed/{id}', 'PetbreedController@update');
 $router->delete('/petbreed/{id}', 'PetbreedController@delete');
-//==================================================================//
+/**Din vi tinh**/
 $router->get('/units', 'UnitsController@index');
 $router->post('/units', 'UnitsController@add');
 $router->put('/units/{id}', 'UnitsController@update');
@@ -22,6 +22,11 @@ $router->get('/products', 'ProductsController@index');
 $router->post('/products', 'ProductsController@add');
 $router->put('/products/{id}', 'ProductsController@update');
 $router->delete('/products/{id}', 'ProductsController@delete');
+/** Dich vu**/
+$router->get('/services', 'ServicesController@index');
+$router->post('/services', 'ServicesController@add');
+$router->put('/services/{id}', 'ServicesController@update');
+$router->delete('/services/{id}', 'ServicesController@delete');
 /**Khách hàng */
 $router->get('/customer', 'CustomerController@index');
 $router->post('/customer', 'CustomerController@add');
@@ -51,6 +56,7 @@ $router->get('/manufacturer/combo', 'ManufacturerController@combo');
 $router->get('/products/combo', 'ProductsController@combo');
 $router->get('/customer/combo', 'CustomerController@combo');
 $router->get('/petbreed/combo', 'PetbreedController@combo');
+$router->get('/services/combo', 'ServicesController@combo');
 /**Các API khác*/
 $router->get('/customer/{id}/debt', 'CustomerController@debt');
 $router->get('/manufacturer/{id}/debt', 'ManufacturerController@debt');
