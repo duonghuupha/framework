@@ -2,12 +2,23 @@
 class Manufacturer extends Model{
     protected static string $table = "dm_suppliers"; // bảng nhà cung cấp
 
-    public static function listProducts(array $params = []) : array{
+    public static function listSupplier(array $params = []) : array{
         return self::paginate(static::$table, $params);
     }
 
+    public static function addSupplier(array $data) : int|false{
+        return self::insert($data);
+    }
+
+    public static function updateSupplier(int $id, array $data) : int|false{
+        return self::update($id, $data);
+    }
+
+    public static function deleteSupplier(int $id) : int|false{
+        return self::delete($id);
+    }s
+
     public static function listCombo() : array{
-        //return self::all();
         $sql = "SELECT id AS value, name AS label FROM " . static::$table;
         return self::dynamicQuery($sql);
     }

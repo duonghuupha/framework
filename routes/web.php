@@ -27,6 +27,11 @@ $router->get('/services', 'ServicesController@index');
 $router->post('/services', 'ServicesController@add');
 $router->put('/services/{id}', 'ServicesController@update');
 $router->delete('/services/{id}', 'ServicesController@delete');
+/** Nha cung cap**/
+$router->get('/manufacturer', 'ManufacturerController@index');
+$router->post('/manufacturer', 'ManufacturerController@add');
+$router->put('/manufacturer/{id}', 'ManufacturerController@update');
+$router->delete('/manufacturer/{id}', 'ManufacturerController@delete');
 /**Khách hàng */
 $router->get('/customer', 'CustomerController@index');
 $router->post('/customer', 'CustomerController@add');

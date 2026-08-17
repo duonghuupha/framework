@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 06, 2026 at 08:45 AM
+-- Generation Time: Aug 17, 2026 at 12:21 AM
 -- Server version: 8.0.46-0ubuntu0.24.04.3
 -- PHP Version: 8.3.32
 
@@ -20,48 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `ecommer`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `clinics`
---
-
-CREATE TABLE `clinics` (
-  `id` int NOT NULL,
-  `customer_id` int DEFAULT NULL,
-  `pet_id` int DEFAULT NULL,
-  `diagnosis` text COLLATE utf8mb3_unicode_ci,
-  `treatment` text COLLATE utf8mb3_unicode_ci,
-  `result` text COLLATE utf8mb3_unicode_ci,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `clinic_files`
---
-
-CREATE TABLE `clinic_files` (
-  `id` int NOT NULL,
-  `clinic_id` int DEFAULT NULL,
-  `file_url` text COLLATE utf8mb3_unicode_ci,
-  `type` varchar(50) COLLATE utf8mb3_unicode_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `clinic_services`
---
-
-CREATE TABLE `clinic_services` (
-  `id` int NOT NULL,
-  `clinic_id` int DEFAULT NULL,
-  `service_id` int DEFAULT NULL,
-  `price` double DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -1323,60 +1281,6 @@ INSERT INTO `dm_categories` (`id`, `parent_id`, `name`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `dm_pet_breeds`
---
-
-CREATE TABLE `dm_pet_breeds` (
-  `id` int NOT NULL,
-  `name` varchar(255) COLLATE utf8mb3_unicode_ci DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
-
---
--- Dumping data for table `dm_pet_breeds`
---
-
-INSERT INTO `dm_pet_breeds` (`id`, `name`) VALUES
-(1, 'Poodle'),
-(2, 'Corgi'),
-(3, 'Fox'),
-(4, 'Fox sóc'),
-(5, 'Pug'),
-(6, 'Béc giê'),
-(7, 'Mông cộc'),
-(8, 'Bắc kinh lai nhật'),
-(9, 'Chó ta'),
-(10, 'Phú quốc'),
-(11, 'Alaska'),
-(12, 'Husky'),
-(13, 'Golden'),
-(14, 'Samoyed'),
-(15, 'Mèo ta'),
-(16, 'Anh lông ngắn'),
-(17, 'Anh lông dài'),
-(18, 'Ba tư'),
-(19, 'Mèo ai cập'),
-(20, 'Munchkin'),
-(21, 'Mèo xiêm'),
-(22, 'Ragdoll'),
-(23, 'Scottish'),
-(24, 'Bengal'),
-(25, 'Bichon');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `dm_services`
---
-
-CREATE TABLE `dm_services` (
-  `id` int NOT NULL,
-  `name` varchar(255) COLLATE utf8mb3_unicode_ci DEFAULT NULL,
-  `price` double DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `dm_suppliers`
 --
 
@@ -1454,6 +1358,13 @@ CREATE TABLE `expenses` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
+--
+-- Dumping data for table `expenses`
+--
+
+INSERT INTO `expenses` (`id`, `code`, `types`, `supplier_id`, `cash_amount`, `bank_amount`, `total_amount`, `date_expense`, `note`, `status`, `created_at`) VALUES
+(1, 'PC-20260806-P1FV', 'debt', 1, 0, 89900, 89900, '2026-08-06', 'Thanh toán công nợ cho nhà cung cấp', 0, '2026-08-06 20:13:59');
+
 -- --------------------------------------------------------
 
 --
@@ -1467,6 +1378,13 @@ CREATE TABLE `expense_cancel` (
   `cancel_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `reason` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `expense_cancel`
+--
+
+INSERT INTO `expense_cancel` (`id`, `expense_id`, `cancel_by`, `cancel_at`, `reason`) VALUES
+(4, 1, 1, '2026-08-06 20:50:33', 'Chọn sai nhà cung cấp');
 
 -- --------------------------------------------------------
 
@@ -3760,15 +3678,6 @@ INSERT INTO `import_items` (`id`, `import_id`, `product_id`, `qty`, `price`, `to
 (1621, 638, 8, 1, 28000, 28000),
 (1622, 638, 9, 1, 33900, 33900);
 
---
--- Triggers `import_items`
---
-DELIMITER $$
-CREATE TRIGGER `trg_import_stock` AFTER INSERT ON `import_items` FOR EACH ROW UPDATE products SET stock = stock + NEW.qty WHERE id = NEW.product_id
-$$
-$$
-DELIMITER ;
-
 -- --------------------------------------------------------
 
 --
@@ -3797,21 +3706,135 @@ CREATE TABLE `internal_transfer_items` (
   `qty_to` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
+-- --------------------------------------------------------
+
 --
--- Triggers `internal_transfer_items`
+-- Table structure for table `medical_invoices`
 --
-DELIMITER $$
-CREATE TRIGGER `trg_internal_stock` AFTER INSERT ON `internal_transfer_items` FOR EACH ROW BEGIN
-    UPDATE products 
-    SET stock = stock - NEW.qty_from 
-    WHERE id = NEW.product_from_id$$
-DELIMITER ;
-DELIMITER $$
-CREATE TRIGGER `trg_internal_stock_delete` AFTER DELETE ON `internal_transfer_items` FOR EACH ROW BEGIN
-    UPDATE products 
-    SET stock = stock + OLD.qty_from 
-    WHERE id = OLD.product_from_id$$
-DELIMITER ;
+
+CREATE TABLE `medical_invoices` (
+  `id` int NOT NULL,
+  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Mã phiếu dịch vụ',
+  `medical_record_id` int NOT NULL COMMENT 'Phiếu khám / bệnh án',
+  `customer_id` int NOT NULL COMMENT 'Khách hàng',
+  `pet_id` int NOT NULL COMMENT 'Thú cưng',
+  `subtotal` double NOT NULL DEFAULT '0' COMMENT 'Tổng tiền trước giảm giá',
+  `discount` double NOT NULL DEFAULT '0' COMMENT 'Giảm giá tổng phiếu',
+  `total_amount` double NOT NULL DEFAULT '0' COMMENT 'Tổng tiền phải thanh toán',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '1: đang sử dụng, 0: hủy',
+  `note` text COLLATE utf8mb4_unicode_ci COMMENT 'Ghi chú',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `medical_invoice_items`
+--
+
+CREATE TABLE `medical_invoice_items` (
+  `id` int NOT NULL,
+  `medical_invoice_id` int NOT NULL COMMENT 'Phiếu dịch vụ',
+  `service_id` int DEFAULT NULL COMMENT 'ID dịch vụ',
+  `service_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Mã dịch vụ tại thời điểm lập phiếu',
+  `service_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên dịch vụ tại thời điểm lập phiếu',
+  `quantity` double NOT NULL DEFAULT '1' COMMENT 'Số lượng',
+  `unit` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Đơn vị tính',
+  `unit_price` double NOT NULL DEFAULT '0' COMMENT 'Đơn giá',
+  `discount` double NOT NULL DEFAULT '0' COMMENT 'Nếu <=100 là %, nếu >100 là số tiền',
+  `total_amount` double NOT NULL DEFAULT '0' COMMENT 'Thành tiền',
+  `note` text COLLATE utf8mb4_unicode_ci COMMENT 'Ghi chú',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `medical_procedures`
+--
+
+CREATE TABLE `medical_procedures` (
+  `id` int NOT NULL,
+  `medical_record_id` int NOT NULL COMMENT 'Phiếu khám',
+  `service_id` int DEFAULT NULL COMMENT 'Dịch vụ được chỉ định',
+  `service_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Mã dịch vụ tại thời điểm chỉ định',
+  `service_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên dịch vụ tại thời điểm chỉ định',
+  `status` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending' COMMENT 'pending: chờ thực hiện, completed: hoàn thành, cancelled: hủy',
+  `result` text COLLATE utf8mb4_unicode_ci COMMENT 'Kết quả thực hiện',
+  `conclusion` text COLLATE utf8mb4_unicode_ci COMMENT 'Kết luận',
+  `doctor_id` int DEFAULT NULL COMMENT 'Bác sĩ/người thực hiện',
+  `procedure_date` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện',
+  `note` text COLLATE utf8mb4_unicode_ci COMMENT 'Ghi chú',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `medical_procedure_files`
+--
+
+CREATE TABLE `medical_procedure_files` (
+  `id` int NOT NULL,
+  `procedure_id` int NOT NULL COMMENT 'Thủ thuật',
+  `file_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên file',
+  `file_path` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Đường dẫn file',
+  `file_type` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'image, pdf, video, document, ...',
+  `mime_type` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'MIME type',
+  `file_size` bigint DEFAULT NULL COMMENT 'Dung lượng file',
+  `sort_order` int NOT NULL DEFAULT '0',
+  `note` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `medical_progress`
+--
+
+CREATE TABLE `medical_progress` (
+  `id` int NOT NULL,
+  `medical_record_id` int NOT NULL COMMENT 'Phiếu khám / bệnh án',
+  `doctor_id` int DEFAULT NULL COMMENT 'Bác sĩ/người cập nhật',
+  `progress_date` datetime NOT NULL COMMENT 'Thời gian ghi nhận',
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Diễn biến điều trị',
+  `note` text COLLATE utf8mb4_unicode_ci COMMENT 'Ghi chú',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `medical_records`
+--
+
+CREATE TABLE `medical_records` (
+  `id` int NOT NULL,
+  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Mã phiếu khám',
+  `customer_id` int NOT NULL COMMENT 'Khách hàng',
+  `pet_id` int NOT NULL COMMENT 'Thú cưng',
+  `doctor_id` int DEFAULT NULL COMMENT 'Bác sĩ phụ trách',
+  `visit_date` datetime NOT NULL COMMENT 'Ngày giờ khám',
+  `weight` double DEFAULT NULL COMMENT 'Cân nặng kg',
+  `temperature` double DEFAULT NULL COMMENT 'Nhiệt độ',
+  `vaccination_status` tinyint NOT NULL DEFAULT '0' COMMENT '0: chưa rõ/chưa đủ, 1: đã tiêm phòng',
+  `deworming_status` tinyint NOT NULL DEFAULT '0' COMMENT '0: chưa rõ/chưa tẩy, 1: đã tẩy giun',
+  `history` text COLLATE utf8mb4_unicode_ci COMMENT 'Tiền sử: thức ăn, bệnh cũ, tiêm phòng, tẩy giun...',
+  `symptoms` text COLLATE utf8mb4_unicode_ci COMMENT 'Triệu chứng',
+  `clinical_exam` text COLLATE utf8mb4_unicode_ci COMMENT 'Thông tin khám lâm sàng',
+  `diagnosis` text COLLATE utf8mb4_unicode_ci COMMENT 'Chẩn đoán',
+  `treatment_plan` text COLLATE utf8mb4_unicode_ci COMMENT 'Phác đồ điều trị',
+  `treatment_type` varchar(30) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'outpatient' COMMENT 'outpatient: ngoại trú, inpatient: nội trú, no_treatment: không điều trị',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '1: đang điều trị, 2: hoàn thành, 0: hủy',
+  `note` text COLLATE utf8mb4_unicode_ci COMMENT 'Ghi chú',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -3821,13 +3844,40 @@ DELIMITER ;
 
 CREATE TABLE `pets` (
   `id` int NOT NULL,
-  `customer_id` int DEFAULT NULL,
-  `name` varchar(255) COLLATE utf8mb3_unicode_ci DEFAULT NULL,
-  `breed_id` int DEFAULT NULL,
-  `gender` tinyint DEFAULT NULL,
-  `color` varchar(255) COLLATE utf8mb3_unicode_ci DEFAULT NULL,
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
+  `customer_id` int NOT NULL COMMENT 'ID chủ thú cưng',
+  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên thú cưng',
+  `breed_id` int DEFAULT NULL COMMENT 'ID giống',
+  `gender` tinyint NOT NULL DEFAULT '0' COMMENT '0: chưa xác định, 1: đực, 2: cái',
+  `birthday` date DEFAULT NULL COMMENT 'Ngày sinh',
+  `color` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Màu lông',
+  `microchip` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Mã microchip',
+  `note` text COLLATE utf8mb4_unicode_ci COMMENT 'Ghi chú',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '1: đang sử dụng, 0: ngừng sử dụng',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pet_breeds`
+--
+
+CREATE TABLE `pet_breeds` (
+  `id` int NOT NULL,
+  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên giống thú cưng',
+  `species` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Loài: dog, cat, ...',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '1: đang sử dụng, 0: ngừng sử dụng',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `pet_breeds`
+--
+
+INSERT INTO `pet_breeds` (`id`, `name`, `species`, `status`, `created_at`, `updated_at`) VALUES
+(1, 'Poodle', 'dog', 1, '2026-08-15 18:40:54', '2026-08-15 18:40:54');
 
 -- --------------------------------------------------------
 
@@ -30577,15 +30627,6 @@ INSERT INTO `seller_items` (`id`, `seller_id`, `product_id`, `qty`, `price`, `di
 (17594, 8328, 8, 1, 35000, 0, 35000, 35000),
 (17595, 8328, 9, 1, 45000, 0, 45000, 45000);
 
---
--- Triggers `seller_items`
---
-DELIMITER $$
-CREATE TRIGGER `trg_sell_stock` AFTER INSERT ON `seller_items` FOR EACH ROW UPDATE products SET stock = stock - NEW.qty WHERE id = NEW.product_id
-$$
-$$
-DELIMITER ;
-
 -- --------------------------------------------------------
 
 --
@@ -38815,6 +38856,25 @@ INSERT INTO `seller_payments` (`id`, `seller_id`, `method`, `amount`, `created_a
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `services`
+--
+
+CREATE TABLE `services` (
+  `id` int NOT NULL,
+  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Mã dịch vụ',
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Tên dịch vụ',
+  `type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Module sử dụng: medical, beauty, ...',
+  `price` double NOT NULL DEFAULT '0' COMMENT 'Giá dịch vụ',
+  `duration` int DEFAULT NULL COMMENT 'Thời gian thực hiện, phút',
+  `status` tinyint NOT NULL DEFAULT '1' COMMENT '1: đang sử dụng, 0: ngừng sử dụng',
+  `note` text COLLATE utf8mb4_unicode_ci COMMENT 'Ghi chú',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `users`
 --
 
@@ -38840,20 +38900,20 @@ INSERT INTO `users` (`id`, `username`, `password`, `fullname`, `active`) VALUES
 -- (See below for the actual view)
 --
 CREATE TABLE `v_expenses` (
-`id` int
+`bank_amount` double
+,`cash_amount` double
 ,`code` varchar(50)
+,`created_at` datetime
+,`date_expense` date
+,`id` int
+,`note` text
 ,`status` tinyint
-,`types` varchar(20)
+,`supplier_address` text
 ,`supplier_id` int
 ,`supplier_name` varchar(255)
 ,`supplier_phone` varchar(50)
-,`supplier_address` text
-,`cash_amount` double
-,`bank_amount` double
 ,`total_amount` double
-,`date_expense` date
-,`note` text
-,`created_at` datetime
+,`types` varchar(20)
 );
 
 -- --------------------------------------------------------
@@ -38863,16 +38923,16 @@ CREATE TABLE `v_expenses` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_imports` (
-`id` int
-,`code` varchar(255)
-,`supplier_id` int
-,`total_amount` double
-,`paid_amount` double
-,`debt_amount` double
-,`status` varchar(20)
+`code` varchar(255)
 ,`created_at` datetime
+,`debt_amount` double
+,`id` int
 ,`note` text
+,`paid_amount` double
+,`status` varchar(20)
+,`supplier_id` int
 ,`supplier_name` varchar(255)
+,`total_amount` double
 );
 
 -- --------------------------------------------------------
@@ -38882,16 +38942,16 @@ CREATE TABLE `v_imports` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_products` (
-`id` int
+`category_id` int
+,`category_name` varchar(255)
 ,`code` varchar(255)
-,`name` varchar(255)
-,`unit_id` int
-,`category_id` int
+,`id` int
 ,`import_price` double
+,`name` varchar(255)
 ,`sell_price` double
 ,`stock` double
+,`unit_id` int
 ,`unit_name` varchar(255)
-,`category_name` varchar(255)
 );
 
 -- --------------------------------------------------------
@@ -38901,20 +38961,20 @@ CREATE TABLE `v_products` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_receipts` (
-`id` int
+`bank_amount` double
+,`cash_amount` double
 ,`code` varchar(50)
+,`created_at` datetime
+,`customer_address` text
 ,`customer_id` int
 ,`customer_name` varchar(255)
 ,`customer_phone` varchar(50)
-,`customer_address` text
-,`types` varchar(20)
-,`cash_amount` double
-,`bank_amount` double
-,`total_amount` double
 ,`date_receipt` date
+,`id` int
 ,`note` text
 ,`status` tinyint
-,`created_at` datetime
+,`total_amount` double
+,`types` varchar(20)
 );
 
 -- --------------------------------------------------------
@@ -38924,19 +38984,19 @@ CREATE TABLE `v_receipts` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_sellers` (
-`id` int
-,`code` varchar(255)
+`code` varchar(255)
+,`created_at` datetime
+,`customer_address` text
 ,`customer_id` int
 ,`customer_name` varchar(255)
 ,`customer_phone` varchar(50)
-,`customer_address` text
-,`total_amount` double
+,`debt_amount` double
 ,`discount_amount` double
 ,`final_amount` double
+,`id` int
 ,`paid_amount` double
-,`debt_amount` double
 ,`status` varchar(20)
-,`created_at` datetime
+,`total_amount` double
 );
 
 -- --------------------------------------------------------
@@ -38989,24 +39049,6 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`admin`@`localhost` SQL SECURITY DEFINER VIEW
 --
 
 --
--- Indexes for table `clinics`
---
-ALTER TABLE `clinics`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `clinic_files`
---
-ALTER TABLE `clinic_files`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `clinic_services`
---
-ALTER TABLE `clinic_services`
-  ADD PRIMARY KEY (`id`);
-
---
 -- Indexes for table `customers`
 --
 ALTER TABLE `customers`
@@ -39016,18 +39058,6 @@ ALTER TABLE `customers`
 -- Indexes for table `dm_categories`
 --
 ALTER TABLE `dm_categories`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `dm_pet_breeds`
---
-ALTER TABLE `dm_pet_breeds`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `dm_services`
---
-ALTER TABLE `dm_services`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -39085,10 +39115,83 @@ ALTER TABLE `internal_transfer_items`
   ADD KEY `transfer_id` (`transfer_id`);
 
 --
+-- Indexes for table `medical_invoices`
+--
+ALTER TABLE `medical_invoices`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_medical_invoice_code` (`code`),
+  ADD KEY `idx_medical_record_id` (`medical_record_id`),
+  ADD KEY `idx_customer_id` (`customer_id`),
+  ADD KEY `idx_pet_id` (`pet_id`),
+  ADD KEY `idx_status` (`status`);
+
+--
+-- Indexes for table `medical_invoice_items`
+--
+ALTER TABLE `medical_invoice_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_medical_invoice_id` (`medical_invoice_id`),
+  ADD KEY `idx_service_id` (`service_id`);
+
+--
+-- Indexes for table `medical_procedures`
+--
+ALTER TABLE `medical_procedures`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_medical_record_id` (`medical_record_id`),
+  ADD KEY `idx_service_id` (`service_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_doctor_id` (`doctor_id`),
+  ADD KEY `idx_procedure_date` (`procedure_date`);
+
+--
+-- Indexes for table `medical_procedure_files`
+--
+ALTER TABLE `medical_procedure_files`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_procedure_id` (`procedure_id`);
+
+--
+-- Indexes for table `medical_progress`
+--
+ALTER TABLE `medical_progress`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_medical_record_id` (`medical_record_id`),
+  ADD KEY `idx_doctor_id` (`doctor_id`),
+  ADD KEY `idx_progress_date` (`progress_date`);
+
+--
+-- Indexes for table `medical_records`
+--
+ALTER TABLE `medical_records`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_medical_code` (`code`),
+  ADD KEY `idx_customer_id` (`customer_id`),
+  ADD KEY `idx_pet_id` (`pet_id`),
+  ADD KEY `idx_doctor_id` (`doctor_id`),
+  ADD KEY `idx_visit_date` (`visit_date`),
+  ADD KEY `idx_treatment_type` (`treatment_type`),
+  ADD KEY `idx_status` (`status`);
+
+--
 -- Indexes for table `pets`
 --
 ALTER TABLE `pets`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_customer_id` (`customer_id`),
+  ADD KEY `idx_breed_id` (`breed_id`),
+  ADD KEY `idx_gender` (`gender`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_microchip` (`microchip`);
+
+--
+-- Indexes for table `pet_breeds`
+--
+ALTER TABLE `pet_breeds`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_breed_name_species` (`name`,`species`),
+  ADD KEY `idx_species` (`species`),
+  ADD KEY `idx_status` (`status`);
 
 --
 -- Indexes for table `products`
@@ -39135,6 +39238,15 @@ ALTER TABLE `seller_payments`
   ADD KEY `seller_id` (`seller_id`);
 
 --
+-- Indexes for table `services`
+--
+ALTER TABLE `services`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uk_service_code` (`code`),
+  ADD KEY `idx_type` (`type`),
+  ADD KEY `idx_status` (`status`);
+
+--
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -39143,24 +39255,6 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT for dumped tables
 --
-
---
--- AUTO_INCREMENT for table `clinics`
---
-ALTER TABLE `clinics`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `clinic_files`
---
-ALTER TABLE `clinic_files`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `clinic_services`
---
-ALTER TABLE `clinic_services`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `customers`
@@ -39173,18 +39267,6 @@ ALTER TABLE `customers`
 --
 ALTER TABLE `dm_categories`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
-
---
--- AUTO_INCREMENT for table `dm_pet_breeds`
---
-ALTER TABLE `dm_pet_breeds`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
-
---
--- AUTO_INCREMENT for table `dm_services`
---
-ALTER TABLE `dm_services`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `dm_suppliers`
@@ -39202,13 +39284,13 @@ ALTER TABLE `dm_units`
 -- AUTO_INCREMENT for table `expenses`
 --
 ALTER TABLE `expenses`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `expense_cancel`
 --
 ALTER TABLE `expense_cancel`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `imports`
@@ -39235,10 +39317,52 @@ ALTER TABLE `internal_transfer_items`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `medical_invoices`
+--
+ALTER TABLE `medical_invoices`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `medical_invoice_items`
+--
+ALTER TABLE `medical_invoice_items`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `medical_procedures`
+--
+ALTER TABLE `medical_procedures`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `medical_procedure_files`
+--
+ALTER TABLE `medical_procedure_files`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `medical_progress`
+--
+ALTER TABLE `medical_progress`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `medical_records`
+--
+ALTER TABLE `medical_records`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `pets`
 --
 ALTER TABLE `pets`
   MODIFY `id` int NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pet_breeds`
+--
+ALTER TABLE `pet_breeds`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -39277,6 +39401,12 @@ ALTER TABLE `seller_payments`
   MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8199;
 
 --
+-- AUTO_INCREMENT for table `services`
+--
+ALTER TABLE `services`
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
@@ -39285,6 +39415,50 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `medical_invoices`
+--
+ALTER TABLE `medical_invoices`
+  ADD CONSTRAINT `fk_medical_invoice_record` FOREIGN KEY (`medical_record_id`) REFERENCES `medical_records` (`id`);
+
+--
+-- Constraints for table `medical_invoice_items`
+--
+ALTER TABLE `medical_invoice_items`
+  ADD CONSTRAINT `fk_medical_invoice_item_invoice` FOREIGN KEY (`medical_invoice_id`) REFERENCES `medical_invoices` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `medical_procedures`
+--
+ALTER TABLE `medical_procedures`
+  ADD CONSTRAINT `fk_procedure_medical_record` FOREIGN KEY (`medical_record_id`) REFERENCES `medical_records` (`id`);
+
+--
+-- Constraints for table `medical_procedure_files`
+--
+ALTER TABLE `medical_procedure_files`
+  ADD CONSTRAINT `fk_procedure_file_procedure` FOREIGN KEY (`procedure_id`) REFERENCES `medical_procedures` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `medical_progress`
+--
+ALTER TABLE `medical_progress`
+  ADD CONSTRAINT `fk_progress_medical_record` FOREIGN KEY (`medical_record_id`) REFERENCES `medical_records` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `medical_records`
+--
+ALTER TABLE `medical_records`
+  ADD CONSTRAINT `fk_medical_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
+  ADD CONSTRAINT `fk_medical_pet` FOREIGN KEY (`pet_id`) REFERENCES `pets` (`id`);
+
+--
+-- Constraints for table `pets`
+--
+ALTER TABLE `pets`
+  ADD CONSTRAINT `fk_pets_breed` FOREIGN KEY (`breed_id`) REFERENCES `pet_breeds` (`id`),
+  ADD CONSTRAINT `fk_pets_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`);
 
 --
 -- Constraints for table `receipt_cancel`
