@@ -16,7 +16,7 @@ class Manufacturer extends Model{
 
     public static function deleteSupplier(int $id) : int|false{
         return self::delete($id);
-    }s
+    }
 
     public static function listCombo() : array{
         $sql = "SELECT id AS value, name AS label FROM " . static::$table;
