@@ -74,5 +74,11 @@ class ServicesController extends Controller{
         $result = $this->servicesModel->listComboServices($input['search']['name']);
         return $this->json($result);
     }
+
+    function data_list(){
+        $payload = $this->checkToken();
+        $result = $this->servicesModel->listDataService('medical');
+        return $this->json($result);
+    }
 }
 ?>

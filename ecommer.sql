@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 17, 2026 at 12:21 AM
+-- Generation Time: Aug 20, 2026 at 12:19 AM
 -- Server version: 8.0.46-0ubuntu0.24.04.3
 -- PHP Version: 8.3.32
 
@@ -3902,7 +3902,7 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `code`, `name`, `unit_id`, `category_id`, `import_price`, `sell_price`, `stock`, `is_active`) VALUES
-(8, '624156', 'Pate Snappy Tom 400g', 11, 2, 28000, 35000, 91, 1),
+(8, '624156', 'Pate Snappy Tom 400g', 11, 2, 28000, 35000, 90, 1),
 (9, '287897', 'Pate Whiskas lon', 11, 2, 33900, 45000, 49, 1),
 (10, '415289', 'Catsrang lẻ', 9, 2, 68000, 95000, -98, 1),
 (11, '184404', 'CatsEye lẻ', 9, 2, 60000, 85000, 16, 1),
@@ -4153,7 +4153,7 @@ INSERT INTO `products` (`id`, `code`, `name`, `unit_id`, `category_id`, `import_
 (310, '317038', 'Tẩy giun Prabenguard for dog', 6, 11, 8000, 30000, -112, 1),
 (311, '660866', 'Mổ đẻ', 16, 11, 0, 1500000, 999969, 1),
 (312, '346937', 'Vệ sinh tai', 16, 10, 0, 50000, 999763, 1),
-(313, '276249', '7 Dental Effects 160g', 8, 1, 34000, 70000, 91, 1),
+(313, '276249', '7 Dental Effects 160g', 8, 1, 34000, 70000, 90, 1),
 (314, '71435', '7 Dental Effects 60g', 8, 1, 16000, 35000, 6, 1),
 (315, '296184', 'Lăn lông', 1, 1, 11000, 30000, 26, 1),
 (316, '588997', 'Lồng vân đá S', 1, 14, 160000, 210000, 7, 1),
@@ -12995,7 +12995,8 @@ INSERT INTO `sellers` (`id`, `code`, `customer_id`, `total_amount`, `discount_am
 (8322, 'HD-524059', 497, 390000, 0, 390000, 390000, 0, 'completed', '', '2025-10-31 17:57:15'),
 (8323, 'HD-515539', 1113, 108000, 0, 108000, 110000, -2000, 'completed', '', '2025-10-31 19:40:02'),
 (8324, 'HD-522868', 1205, 150000, 0, 150000, 150000, 0, 'completed', '', '2025-10-31 19:40:59'),
-(8328, 'HĐ-20260804-ZYTH', 3, 80000, 0, 80000, 0, 80000, 'debt', '', '2026-08-04 15:57:58');
+(8328, 'HĐ-20260804-ZYTH', 3, 80000, 0, 80000, 0, 80000, 'debt', '', '2026-08-04 15:57:58'),
+(8329, 'HĐ-20260817-BZW0', 5, 105000, 0, 105000, 105000, 0, 'completed', '', '2026-08-17 21:19:31');
 
 -- --------------------------------------------------------
 
@@ -30625,7 +30626,9 @@ INSERT INTO `seller_items` (`id`, `seller_id`, `product_id`, `qty`, `price`, `di
 (17588, 8323, 520, 2, 18000, 0, 18000, 36000),
 (17589, 8324, 208, 1, 150000, 0, 150000, 150000),
 (17594, 8328, 8, 1, 35000, 0, 35000, 35000),
-(17595, 8328, 9, 1, 45000, 0, 45000, 45000);
+(17595, 8328, 9, 1, 45000, 0, 45000, 45000),
+(17596, 8329, 8, 1, 35000, 0, 35000, 35000),
+(17597, 8329, 313, 1, 70000, 0, 70000, 70000);
 
 -- --------------------------------------------------------
 
@@ -38851,7 +38854,8 @@ INSERT INTO `seller_payments` (`id`, `seller_id`, `method`, `amount`, `created_a
 (8195, 8321, 'cash', 550000, '2025-10-31 00:00:00'),
 (8196, 8322, 'cash', 390000, '2025-10-31 00:00:00'),
 (8197, 8323, 'cash', 108000, '2025-10-31 00:00:00'),
-(8198, 8324, 'cash', 150000, '2025-10-31 00:00:00');
+(8198, 8324, 'cash', 150000, '2025-10-31 00:00:00'),
+(8199, 8329, 'cash', 105000, '2026-08-17 21:19:31');
 
 -- --------------------------------------------------------
 
@@ -38871,6 +38875,19 @@ CREATE TABLE `services` (
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `services`
+--
+
+INSERT INTO `services` (`id`, `code`, `name`, `type`, `price`, `duration`, `status`, `note`, `created_at`, `updated_at`) VALUES
+(2, '289945', 'Siêu âm thai', 'medical', 150000, 30, 1, 'Siêu âm thai thú cưng', '2026-08-18 18:18:18', '2026-08-18 18:18:18'),
+(3, '638076', 'Xét nghiệm máu tổng quát', 'medical', 800000, 30, 1, 'Xét nghiệm máu tổng quát, gồm xét nghiệm sinh lý và xét nghiệm sinh hóa 24 chỉ số', '2026-08-18 18:19:22', '2026-08-18 18:19:22'),
+(4, '716101', 'Xết nghiệm nấm/ghẻ', 'medical', 150000, 15, 1, 'Xét nghiệm nấm da, ghẻ tai, viêm da', '2026-08-18 18:20:34', '2026-08-18 18:20:34'),
+(5, '571717', 'Chụp X-quang', 'medical', 400000, 60, 1, 'Chụp X-quang xương, nội tạng', '2026-08-18 18:21:21', '2026-08-18 18:21:21'),
+(6, '680777', 'Test CPV', 'medical', 150000, 10, 1, 'Test bệnh Pravo virut trên chó - bệnh truyền nhiễm', '2026-08-18 18:22:20', '2026-08-18 18:22:20'),
+(7, '532408', 'Test CDV', 'medical', 150000, 10, 1, 'Test bệnh Care virut trên chó - behj truyền nhiễm', '2026-08-18 18:22:59', '2026-08-18 18:22:59'),
+(8, '510164', 'Test FPV', 'medical', 150000, 10, 1, 'Test bệnh giảm bạch cầu trên mèo - bệnh truyền nhiễm', '2026-08-18 18:23:23', '2026-08-18 18:23:23');
 
 -- --------------------------------------------------------
 
@@ -38900,20 +38917,20 @@ INSERT INTO `users` (`id`, `username`, `password`, `fullname`, `active`) VALUES
 -- (See below for the actual view)
 --
 CREATE TABLE `v_expenses` (
-`bank_amount` double
-,`cash_amount` double
+`id` int
 ,`code` varchar(50)
-,`created_at` datetime
-,`date_expense` date
-,`id` int
-,`note` text
 ,`status` tinyint
-,`supplier_address` text
+,`types` varchar(20)
 ,`supplier_id` int
 ,`supplier_name` varchar(255)
 ,`supplier_phone` varchar(50)
+,`supplier_address` text
+,`cash_amount` double
+,`bank_amount` double
 ,`total_amount` double
-,`types` varchar(20)
+,`date_expense` date
+,`note` text
+,`created_at` datetime
 );
 
 -- --------------------------------------------------------
@@ -38923,16 +38940,16 @@ CREATE TABLE `v_expenses` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_imports` (
-`code` varchar(255)
-,`created_at` datetime
-,`debt_amount` double
-,`id` int
-,`note` text
-,`paid_amount` double
-,`status` varchar(20)
+`id` int
+,`code` varchar(255)
 ,`supplier_id` int
-,`supplier_name` varchar(255)
 ,`total_amount` double
+,`paid_amount` double
+,`debt_amount` double
+,`status` varchar(20)
+,`created_at` datetime
+,`note` text
+,`supplier_name` varchar(255)
 );
 
 -- --------------------------------------------------------
@@ -38942,16 +38959,16 @@ CREATE TABLE `v_imports` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_products` (
-`category_id` int
-,`category_name` varchar(255)
+`id` int
 ,`code` varchar(255)
-,`id` int
-,`import_price` double
 ,`name` varchar(255)
+,`unit_id` int
+,`category_id` int
+,`import_price` double
 ,`sell_price` double
 ,`stock` double
-,`unit_id` int
 ,`unit_name` varchar(255)
+,`category_name` varchar(255)
 );
 
 -- --------------------------------------------------------
@@ -38961,20 +38978,20 @@ CREATE TABLE `v_products` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_receipts` (
-`bank_amount` double
-,`cash_amount` double
+`id` int
 ,`code` varchar(50)
-,`created_at` datetime
-,`customer_address` text
 ,`customer_id` int
 ,`customer_name` varchar(255)
 ,`customer_phone` varchar(50)
+,`customer_address` text
+,`types` varchar(20)
+,`cash_amount` double
+,`bank_amount` double
+,`total_amount` double
 ,`date_receipt` date
-,`id` int
 ,`note` text
 ,`status` tinyint
-,`total_amount` double
-,`types` varchar(20)
+,`created_at` datetime
 );
 
 -- --------------------------------------------------------
@@ -38984,19 +39001,19 @@ CREATE TABLE `v_receipts` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_sellers` (
-`code` varchar(255)
-,`created_at` datetime
-,`customer_address` text
+`id` int
+,`code` varchar(255)
 ,`customer_id` int
 ,`customer_name` varchar(255)
 ,`customer_phone` varchar(50)
-,`debt_amount` double
+,`customer_address` text
+,`total_amount` double
 ,`discount_amount` double
 ,`final_amount` double
-,`id` int
 ,`paid_amount` double
+,`debt_amount` double
 ,`status` varchar(20)
-,`total_amount` double
+,`created_at` datetime
 );
 
 -- --------------------------------------------------------
@@ -39386,25 +39403,25 @@ ALTER TABLE `receipt_cancel`
 -- AUTO_INCREMENT for table `sellers`
 --
 ALTER TABLE `sellers`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8329;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8330;
 
 --
 -- AUTO_INCREMENT for table `seller_items`
 --
 ALTER TABLE `seller_items`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17596;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17598;
 
 --
 -- AUTO_INCREMENT for table `seller_payments`
 --
 ALTER TABLE `seller_payments`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8199;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8200;
 
 --
 -- AUTO_INCREMENT for table `services`
 --
 ALTER TABLE `services`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `users`

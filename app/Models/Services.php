@@ -33,5 +33,10 @@ class Services extends Model{
                 FROM " . static::$table . " WHERE (code LIKE '%$name%' OR name LIKE '%$name%') AND status = 1";
         return self::dynamicQuery($sql);
     }
+
+    public static function listDataService(string $type) : array|false{
+        $sql = "SELECT id, code, name, type, price, note  FROM " . static::$table . " WHERE type = '$type' AND status = 1";
+        return self::dynamicQuery($sql);
+    }
 }
 ?>
