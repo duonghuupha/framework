@@ -37,7 +37,7 @@ class CustomerController extends Controller{
                 'phone' => $input['phone'] ?? ''
             ];
             $newCustomerId = $this->customerModel->addCustomer($data);
-            return $this->json(['new_customer_id' => $data]);
+            return $this->json(['new_customer_id' => $newCustomerId]);
         }
     }
 
