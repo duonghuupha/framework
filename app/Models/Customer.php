@@ -1,8 +1,7 @@
 <?php
 class Customer extends Model{
     protected static string $table = "customers"; //bảng khách hàng
-    //protected static string $table_debt = "tbl_thu"; // bảng thu
-    //protected static string $table_sellers = "tbl_sellers"; // bảng bán hàng
+    protected static string $seller = "sellers"; //bảng hóa đơn
 
     public static function listCustomer(array $params = []) : array{
         return self::paginate(static::$table, $params);
@@ -52,6 +51,44 @@ class Customer extends Model{
             'receipt_amount' => $receiptAmount,
             'current_debt' => $sellerDebt - $receiptAmount
         ];
+    }
+
+    public function getCustomerInfo($id) : array{
+        return self::find($id);
+    }
+
+    public function getCustomerHistory(int $id, array $params = []) : array{
+        $code = trim($params['search']['code'] ?? '');
+        $dateFrom = $params['search']['date_start'] ?? '';
+        $dateTo = $params['search']['date_end'] ?? '';
+        unset(
+            $params['search']['code'],
+            $params['search']['date_start'],
+            $params['search']['date_end']
+        );
+
+        $params['advanced'][] = [
+            'type' => 'raw',
+            'sql' => 'customer_id = ?',
+            'params' => [$id]
+        ];
+
+        if($code !== ''){
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 'code LIKE ?',
+                'params' => ["{$code}"]
+            ];
+        }
+
+        if($dateFrom && $dateTo){
+            $params['advanced'][] =[
+                'type' => 'raw',
+                'sql' => 'DATE(created_at) BETWEEN ? AND ?',
+                'params' => [$dateFrom, $dateTo]
+            ];
+        }
+        return self::paginateAdv(static::$seller, $params);
     }
 }
 ?>

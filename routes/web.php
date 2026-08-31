@@ -37,6 +37,8 @@ $router->get('/customer', 'CustomerController@index');
 $router->post('/customer', 'CustomerController@add');
 $router->put('/customer/{id}', 'CustomerController@update');
 $router->delete('/customer/{id}', 'CustomerController@delete');
+$router->get('/customer/info/{id}', 'CustomerController@info');
+$router->get('/customer/history/{id}', 'CustomerController@history');
 /**Nhập kho */
 $router->get('/imports', 'ImportsController@index');
 $router->post('/imports', 'ImportsController@add');

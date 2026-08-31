@@ -81,5 +81,47 @@ class CustomerController extends Controller{
         $result = $this->customerModel->getDebtCustomer($id);
         return $this->json($result);
     }  
+
+    public function info($id){
+        $payload = $this->checkToken();
+        $result = $this->customerModel->getCustomerInfo($id);
+        return $this->json($result);
+    }
+
+    public function history($id){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $date_start = $input['search']['date_start'] ?? '';
+        $date_end = $input['search']['date_end'] ?? '';
+
+        $date_from = '';
+        if(!empty($date_start)){
+            $objectDate = DateTime::createFromFormat('d/m/Y', $date_start);
+            if($objectDate){
+                $date_from = $objectDate->format('Y-m-d');
+            }
+        }
+        $date_to = '';
+        if(!empty($date_end)){
+            $objectDate = DateTime::createFromFormat('d/m/Y', $date_end);
+            if($objectDate){
+                $date_to = $objectDate->format('Y-m-d');
+            }
+        }
+
+        $params = [
+            'page' => $input['page'] ?? 1,
+            'limit' => $input['limit'] ?? 20,
+            'search' => [
+                'code' => $input['search']['code'] ?? '',
+                'date_start' => $date_from,
+                'date_end' => $date_to
+            ],
+            'filters' => [],
+            'order' => ['id' => 'DESC']
+        ];
+        $result = $this->customerModel->getCustomerHistory($id, $params);
+        return $this->json($result);
+    }
 }
 ?>
