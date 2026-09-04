@@ -65,4 +65,14 @@ class ImportsController extends Controller{
         );
         return $this->json($result);
     }
+
+    /**
+     * THông tin phiếu nhập
+     */
+    function info(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $result = $this->importsModel->getImportInfo($input['id']);
+        return $this->json($result);
+    }
 }

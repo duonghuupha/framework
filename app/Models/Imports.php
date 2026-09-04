@@ -161,6 +161,7 @@ class Imports extends Model{
                 ii.*,
                 p.code product_code,
                 p.name product_name,
+                p.sell_price product_price,
                 u.name unit_name
             FROM import_items ii
             LEFT JOIN products p
@@ -175,5 +176,12 @@ class Imports extends Model{
             $sql,
             [$id]
         );
+    }
+
+    /* ==========================================================
+     * CHI TIẾT THÔNG TIN PHIẾU NHẬP
+     * ========================================================== */
+    public static function getImportInfo($id){
+        return self::find($id);
     }
 }

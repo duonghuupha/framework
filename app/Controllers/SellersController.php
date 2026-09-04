@@ -68,6 +68,16 @@ class SellersController extends Controller{
     }
 
     /**
+     * Thông tin chung của hoa đơn
+     */
+    function info_seller(){
+        $payload = $this->checkToken();
+        $input = Input::all();
+        $result = $this->sellerModel->getSellerInfo($input['id']);
+        return $this->json($result);
+    }
+
+    /**
      * Thêm hóa đơn bán
      */
     public function add(){

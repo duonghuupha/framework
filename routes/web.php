@@ -43,11 +43,13 @@ $router->get('/customer/history/{id}', 'CustomerController@history');
 $router->get('/imports', 'ImportsController@index');
 $router->post('/imports', 'ImportsController@add');
 $router->get('/imports/details/{id}', 'ImportsController@details');
+$router->get('/imports/info/{id}', 'ImportsController@info');
 /**Bán hàng */
 $router->get('/sellers', 'SellersController@index');
 $router->post('/sellers', 'SellersController@add');
 $router->get('/sellers/details/{id}', 'SellersController@details');
 $router->get('/sellers/details_payment/{id}', 'SellersController@details_payment');
+$router->get('/sellers/info_seller/{id}', 'SellersController@info_seller');
 /**Phiếu thu */
 $router->get('/receipts', 'ReceiptsController@index');
 $router->post('/receipts', 'ReceiptsController@add');

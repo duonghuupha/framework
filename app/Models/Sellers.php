@@ -113,6 +113,14 @@ class Sellers extends Model{
     }
 
     /* ==========================================================
+     * CHI TIẾT HÓA ĐƠN
+     * ========================================================== */
+    public static function getSellerInfo($id){
+        $sql = "SELECT * FROM v_sellers WHERE id = ?";
+        return self::dynamicQuery($sql, [$id]);
+    }
+
+    /* ==========================================================
      * TÍNH GIẢM GIÁ
      * <=100 : %
      * >100  : TIỀN
