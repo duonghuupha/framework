@@ -90,4 +90,17 @@ class SellersController extends Controller{
             return $this->json([], 'error', $e->getMessage());
         }
     }
+
+    /**
+     * Xóa hóa đơn
+     */
+    public function delete($id){
+        try {
+            $this->checkToken();
+            $deleted = $this->sellerModel->delete_seller((int)$id);
+            return $this->json(['deleted' => $deleted]);
+        } catch (Exception $e) {
+            return $this->json([], 'error', $e->getMessage());
+        }
+    }
 }

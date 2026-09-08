@@ -26,6 +26,13 @@ class Sellers extends Model{
             $params['search']['date_start'],
             $params['search']['date_end']
         );
+
+        $params['advanced'][] = [
+            'type' => 'raw',
+            'sql' => 'active = ?',
+            'params' => [0]
+        ];
+
         if ($customer !== '') {
             $params['advanced'][] = [
                 'type'   => 'raw',
@@ -342,6 +349,43 @@ class Sellers extends Model{
             self::decreaseStocks($summary['products']);
             self::commit();
             return $sellerId;
+        } catch (Exception $e) {
+            self::rollback();
+            throw $e;
+        }
+    }   
+    /* ==========================================================
+     * HỦY HÓA ĐƠN - ẨN + HOÀN KHO
+     * ========================================================== */
+    public static function delete_seller(int $id): bool{
+        self::beginTransaction();
+        try {
+            $seller = self::dynamicQuery("SELECT id, active FROM sellers WHERE id = ? LIMIT 1", [$id]);
+            if (empty($seller)) {
+                throw new Exception("Không tìm thấy hóa đơn.");
+            }
+            if ((int)$seller[0]['active'] === 1) {
+                throw new Exception("Hóa đơn này đã được hủy trước đó.");
+            }
+            $items = self::dynamicQuery("SELECT product_id, qty FROM seller_items WHERE seller_id = ?", [$id]);
+            if (empty($items)) {
+                throw new Exception("Hóa đơn không có sản phẩm để hoàn kho.");
+            }
+            foreach ($items as $item) {
+                $productId = (int)$item['product_id'];
+                $qty = (float)$item['qty'];
+                if ($productId <= 0) {
+                    throw new Exception("Sản phẩm trong hóa đơn không hợp lệ.");
+                }
+                if ($qty <= 0) {
+                    throw new Exception("Số lượng hoàn kho không hợp lệ cho sản phẩm ID: {$productId}.");
+                }
+                $sql = "UPDATE products SET stock = stock + ? WHERE id = ?";
+                self::execQuery($sql, [$qty, $productId]);
+            }
+            self::execQuery("UPDATE sellers SET active = 1 WHERE id = ?", [$id]);
+            self::commit();
+            return true;
         } catch (Exception $e) {
             self::rollback();
             throw $e;

@@ -50,6 +50,7 @@ $router->post('/sellers', 'SellersController@add');
 $router->get('/sellers/details/{id}', 'SellersController@details');
 $router->get('/sellers/details_payment/{id}', 'SellersController@details_payment');
 $router->get('/sellers/info_seller/{id}', 'SellersController@info_seller');
+$router->delete('/sellers/{id}', 'SellersController@delete');
 /**Phiếu thu */
 $router->get('/receipts', 'ReceiptsController@index');
 $router->post('/receipts', 'ReceiptsController@add');
