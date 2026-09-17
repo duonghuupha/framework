@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 13, 2026 at 10:46 PM
+-- Generation Time: Sep 17, 2026 at 08:42 PM
 -- Server version: 8.4.11-0ubuntu0.26.04.1
 -- PHP Version: 8.1.34
 
@@ -4698,7 +4698,8 @@ INSERT INTO `products` (`id`, `code`, `name`, `unit_id`, `category_id`, `import_
 (856, '316716', 'Tẩy giun Endogard ', 6, 1, 28500.00, 50000.00, 12.0000, 1),
 (857, '8049', 'Tắm mèo 5 - 10kg', 16, 34, 50000.00, 200000.00, -4.0000, 1),
 (858, '638956', 'Nexgard combo 2.5 - 7.5kg', 5, 28, 227000.00, 310000.00, 4.0000, 1),
-(859, '141933', 'Pate Mu', 11, 2, 3500.00, 9000.00, 354.0000, 1);
+(859, '141933', 'Pate Mu', 11, 2, 3500.00, 9000.00, 354.0000, 1),
+(862, '119618', 'Test sản phẩm Uom', 8, 1, 10000.00, 15000.00, 0.0000, 1);
 
 -- --------------------------------------------------------
 
@@ -5519,7 +5520,8 @@ INSERT INTO `product_uoms` (`id`, `product_id`, `unit_id`, `conversion_factor`, 
 (793, 856, 6, 1.000000, 50000.00, 1, 1, '2026-09-13 22:16:44', '2026-09-13 22:16:44'),
 (794, 857, 16, 1.000000, 200000.00, 1, 1, '2026-09-13 22:16:44', '2026-09-13 22:16:44'),
 (795, 858, 5, 1.000000, 310000.00, 1, 1, '2026-09-13 22:16:44', '2026-09-13 22:16:44'),
-(796, 859, 11, 1.000000, 9000.00, 1, 1, '2026-09-13 22:16:44', '2026-09-13 22:16:44');
+(796, 859, 11, 1.000000, 9000.00, 1, 1, '2026-09-13 22:16:44', '2026-09-13 22:16:44'),
+(797, 862, 8, 1.000000, 15000.00, 1, 1, '2026-09-16 15:49:26', '2026-09-16 15:49:26');
 
 -- --------------------------------------------------------
 
@@ -39739,20 +39741,20 @@ INSERT INTO `users` (`id`, `username`, `password`, `fullname`, `active`) VALUES
 -- (See below for the actual view)
 --
 CREATE TABLE `v_expenses` (
-`id` int
+`bank_amount` double
+,`cash_amount` double
 ,`code` varchar(50)
+,`created_at` datetime
+,`date_expense` date
+,`id` int
+,`note` text
 ,`status` tinyint
-,`types` varchar(20)
+,`supplier_address` text
 ,`supplier_id` int
 ,`supplier_name` varchar(255)
 ,`supplier_phone` varchar(50)
-,`supplier_address` text
-,`cash_amount` double
-,`bank_amount` double
 ,`total_amount` double
-,`date_expense` date
-,`note` text
-,`created_at` datetime
+,`types` varchar(20)
 );
 
 -- --------------------------------------------------------
@@ -39762,16 +39764,16 @@ CREATE TABLE `v_expenses` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_imports` (
-`id` int
-,`code` varchar(255)
-,`supplier_id` int
-,`total_amount` double
-,`paid_amount` double
-,`debt_amount` double
-,`status` varchar(20)
+`code` varchar(255)
 ,`created_at` datetime
+,`debt_amount` double
+,`id` int
 ,`note` text
+,`paid_amount` double
+,`status` varchar(20)
+,`supplier_id` int
 ,`supplier_name` varchar(255)
+,`total_amount` double
 );
 
 -- --------------------------------------------------------
@@ -39781,16 +39783,16 @@ CREATE TABLE `v_imports` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_products` (
-`id` int
+`category_id` int
+,`category_name` varchar(255)
 ,`code` varchar(255)
-,`name` varchar(255)
-,`unit_id` int
-,`category_id` int
+,`id` int
 ,`import_price` decimal(15,2)
+,`name` varchar(255)
 ,`sell_price` decimal(15,2)
 ,`stock` decimal(18,4)
+,`unit_id` int
 ,`unit_name` varchar(255)
-,`category_name` varchar(255)
 );
 
 -- --------------------------------------------------------
@@ -39800,20 +39802,20 @@ CREATE TABLE `v_products` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_receipts` (
-`id` int
+`bank_amount` double
+,`cash_amount` double
 ,`code` varchar(50)
+,`created_at` datetime
+,`customer_address` text
 ,`customer_id` int
 ,`customer_name` varchar(255)
 ,`customer_phone` varchar(50)
-,`customer_address` text
-,`types` varchar(20)
-,`cash_amount` double
-,`bank_amount` double
-,`total_amount` double
 ,`date_receipt` date
+,`id` int
 ,`note` text
 ,`status` tinyint
-,`created_at` datetime
+,`total_amount` double
+,`types` varchar(20)
 );
 
 -- --------------------------------------------------------
@@ -39823,20 +39825,20 @@ CREATE TABLE `v_receipts` (
 -- (See below for the actual view)
 --
 CREATE TABLE `v_sellers` (
-`id` int
+`active` int
 ,`code` varchar(255)
+,`created_at` datetime
+,`customer_address` text
 ,`customer_id` int
 ,`customer_name` varchar(255)
 ,`customer_phone` varchar(50)
-,`customer_address` text
-,`total_amount` double
+,`debt_amount` double
 ,`discount_amount` double
 ,`final_amount` double
+,`id` int
 ,`paid_amount` double
-,`debt_amount` double
 ,`status` varchar(20)
-,`created_at` datetime
-,`active` int
+,`total_amount` double
 );
 
 --
@@ -40172,13 +40174,13 @@ ALTER TABLE `pet_breeds`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=862;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=863;
 
 --
 -- AUTO_INCREMENT for table `product_uoms`
 --
 ALTER TABLE `product_uoms`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=797;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=798;
 
 --
 -- AUTO_INCREMENT for table `receipts`

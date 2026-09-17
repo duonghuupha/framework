@@ -39,8 +39,8 @@ class ProductsController extends Controller{
                 'stock' => $input['stock'] ?? 0,
                 'is_active' => 1,
             ];
-            $newProductId = $this->productsModel->addProduct($data);
-            return $this->json(['new_product_id' => $data]);
+            $newProductId = $this->productsModel->createProduct($data);
+            return $this->json(['new_product_id' => $newProductId]);
         }
     }
 

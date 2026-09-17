@@ -21,6 +21,32 @@ class Products extends Model{
         return self::insert($data);
     }
 
+    public static function createProduct(array $data) : int|false{
+        self::beginTransaction();
+        try{
+            // tao san pham
+            $productId = self::addProduct($data);
+            if(!$productId){
+                self::rollback();
+                return false;
+            }
+            // tao base Uom
+            $baseUomId = ProductUoms::createBase(
+                (int)$productId, (int)$data['unit_id'], (float)$data['sell_price'], (int)$data['is_active']
+            );
+            if(!$baseUomId){
+                self::rollback();
+                return false;
+            }
+            // hoan tat transaction
+            self::commit();
+            return (int)$productId;
+        }catch(Exception $e){
+            self::rollback();
+            throw $e;
+        }
+    }
+
     public static function updateProduct(int $id, array $data) : int|false{
         return self::update($id, $data);
     }
