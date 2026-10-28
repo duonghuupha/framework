@@ -71,6 +71,8 @@ $router->get('/services/combo', 'ServicesController@combo');
 $router->get('/customer/{id}/debt', 'CustomerController@debt');
 $router->get('/manufacturer/{id}/debt', 'ManufacturerController@debt');
 $router->get('/services/data_list', 'ServicesController@data_list');
+/**Các API báo cáo*/
+$router->get('/reportsellers', 'ReportsellersController@index');
 // Route test nhanh
 $router->setNotFound(function() {
     echo json_encode(['error' => 'API route not found']);
