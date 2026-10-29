@@ -1,111 +1,91 @@
+
 <?php
-/**
- * Model báo cáo bán hàng của IVYVET.
- * Chỉ đọc dữ liệu hiện có; không thêm, sửa hoặc xóa dữ liệu.
- */
-class Reportsellers extends Model
+
+class ReportSellers extends Model
 {
-    protected static string $table = 'sellers';
+    protected static string $table = "sellers";
+    protected static string $view = "v_sellers";
 
     /**
-     * Tổng hợp danh sách hóa đơn theo điều kiện báo cáo.
-     *
-     * $params = [
-     *   'page' => 1,
-     *   'limit' => 20,
-     *   'search' => [
-     *      'code' => '', 'customer' => '', 'product' => '',
-     *      'date_start' => 'YYYY-MM-DD', 'date_end' => 'YYYY-MM-DD'
-     *   ]
-     * ]
-     *
-     * Trả về cấu trúc: ['pagination' => [...], 'rows' => [...]]
+     * Báo cáo bán hàng.
+     * Chỉ đọc dữ liệu, không thay đổi hóa đơn.
      */
     public static function reportSellers(array $params = []): array
     {
-        $page  = max(1, (int)($params['page'] ?? 1));
-        $limit = max(1, min(200, (int)($params['limit'] ?? 20)));
-        $offset = ($page - 1) * $limit;
+        $customer = trim($params['search']['customer'] ?? '');
+        $product  = trim($params['search']['product'] ?? '');
+        $dateFrom = $params['search']['date_start'] ?? '';
+        $dateTo   = $params['search']['date_end'] ?? '';
 
-        $search = $params['search'] ?? [];
-        $code = trim((string)($search['code'] ?? ''));
-        $customer = trim((string)($search['customer'] ?? ''));
-        $product = trim((string)($search['product'] ?? ''));
-        $dateStart = trim((string)($search['date_start'] ?? ''));
-        $dateEnd = trim((string)($search['date_end'] ?? ''));
+        unset(
+            $params['search']['customer'],
+            $params['search']['product'],
+            $params['search']['date_start'],
+            $params['search']['date_end']
+        );
 
-        // Báo cáo chỉ lấy hóa đơn còn hiệu lực; active = 1 là đã hủy.
-        $where = ['vs.active = ?'];
-        $bind = [0];
-
-        if ($code !== '') {
-            $where[] = 'vs.code LIKE ?';
-            $bind[] = '%' . $code . '%';
-        }
-
-        if ($customer !== '') {
-            $where[] = '(vs.customer_name LIKE ? OR vs.customer_phone LIKE ?)';
-            $bind[] = '%' . $customer . '%';
-            $bind[] = '%' . $customer . '%';
-        }
-
-        if ($product !== '') {
-            $where[] = 'EXISTS (
-                SELECT 1
-                FROM seller_items si
-                INNER JOIN products p ON p.id = si.product_id
-                WHERE si.seller_id = vs.id
-                  AND (p.name LIKE ? OR p.code LIKE ?)
-            )';
-            $bind[] = '%' . $product . '%';
-            $bind[] = '%' . $product . '%';
-        }
-
-        if ($dateStart !== '') {
-            $where[] = 'DATE(vs.created_at) >= ?';
-            $bind[] = $dateStart;
-        }
-        if ($dateEnd !== '') {
-            $where[] = 'DATE(vs.created_at) <= ?';
-            $bind[] = $dateEnd;
-        }
-
-        $whereSql = ' WHERE ' . implode(' AND ', $where);
-
-        // Đếm số hóa đơn khớp điều kiện, không thay đổi dữ liệu.
-        $countSql = "
-            SELECT COUNT(*) AS total
-            FROM v_sellers vs
-            {$whereSql}
-        ";
-        $countRows = self::dynamicQuery($countSql, $bind, 0);
-        $total = (int)($countRows[0]['total'] ?? 0);
-
-        // Lấy dữ liệu trang hiện tại.
-        $dataSql = "
-            SELECT
-                vs.id,
-                vs.code,
-                vs.created_at,
-                vs.customer_name,
-                vs.total_amount,
-                vs.discount_amount,
-                vs.final_amount
-            FROM v_sellers vs
-            {$whereSql}
-            ORDER BY vs.created_at DESC, vs.id DESC
-            LIMIT {$limit} OFFSET {$offset}
-        ";
-        $rows = self::dynamicQuery($dataSql, $bind, 0);
-
-        return [
-            'pagination' => [
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $total,
-                'total_pages' => (int)ceil($total / $limit),
-            ],
-            'rows' => $rows,
+        // Chỉ lấy hóa đơn chưa bị hủy.
+        $params['advanced'][] = [
+            'type' => 'raw',
+            'sql' => 'active = ?',
+            'params' => [0]
         ];
+
+        // Lọc theo khách hàng.
+        if ($customer !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => '(customer_name LIKE ? OR customer_phone LIKE ?)',
+                'params' => [
+                    "%{$customer}%",
+                    "%{$customer}%"
+                ]
+            ];
+        }
+
+        // Lọc theo sản phẩm có trong hóa đơn.
+        if ($product !== '') {
+            $params['advanced'][] = [
+                'type' => 'exists',
+                'sql' => '
+                    SELECT 1
+                    FROM seller_items si
+                    INNER JOIN products p
+                        ON p.id = si.product_id
+                    WHERE si.seller_id = v_sellers.id
+                      AND (
+                          p.name LIKE ?
+                          OR p.code LIKE ?
+                      )
+                ',
+                'params' => [
+                    "%{$product}%",
+                    "%{$product}%"
+                ]
+            ];
+        }
+
+        // Lọc ngày bắt đầu và ngày kết thúc.
+        if ($dateFrom !== '' && $dateTo !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 'DATE(created_at) BETWEEN ? AND ?',
+                'params' => [$dateFrom, $dateTo]
+            ];
+        } elseif ($dateFrom !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 'DATE(created_at) >= ?',
+                'params' => [$dateFrom]
+            ];
+        } elseif ($dateTo !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 'DATE(created_at) <= ?',
+                'params' => [$dateTo]
+            ];
+        }
+
+        return self::paginateAdv(static::$view, $params);
     }
 }
