@@ -304,7 +304,93 @@ class Model{
             ]
         ];
     }
-    
+
+    public static function paginateGroupByAdv(string $table, array $params = [], int $ttl = 30): array {
+        $page = max(1, (int)($params['page'] ?? 1));
+        $limit = max(1, (int)($params['limit'] ?? 20));
+        $offset = ($page - 1) * $limit;
+
+        $filters  = $params['filters'] ?? [];
+        $search   = $params['search'] ?? [];
+        $advanced = $params['advanced'] ?? [];
+        $order    = $params['order'] ?? [];
+
+        // SELECT và GROUP BY là cấu hình SQL do lập trình viên khai báo.
+        $select = trim($params['select'] ?? '');
+        $groupBy = $params['group_by'] ?? [];
+
+        if ($select === '') {
+            throw new InvalidArgumentException(
+                'Thiếu tham số select cho paginateGroupByAdv().'
+            );
+        }
+
+        if (is_string($groupBy)) {
+            $groupBy = [$groupBy];
+        }
+
+        if (!is_array($groupBy) || empty($groupBy)) {
+            throw new InvalidArgumentException(
+                'group_by phải là chuỗi hoặc mảng không rỗng.'
+            );
+        }
+
+        foreach ($groupBy as $column) {
+            if (!is_string($column) || trim($column) === '') {
+                throw new InvalidArgumentException(
+                    'Cấu hình group_by không hợp lệ.'
+                );
+            }
+        }
+
+        $groupBySQL = ' GROUP BY ' . implode(', ', $groupBy);
+
+        // Tái sử dụng toàn bộ logic lọc nâng cao hiện có.
+        [$whereSQL, $queryParams] = self::buildWhereAdv($filters, $search, $advanced);
+
+        // ORDER BY
+        $orderSQL = '';
+
+        if (!empty($order)) {
+            $orderParts = [];
+
+            foreach ($order as $field => $direction) {
+                $direction = strtoupper($direction) === 'DESC' ? 'DESC' : 'ASC';
+                $orderParts[] = "{$field} {$direction}";
+            }
+            $orderSQL = ' ORDER BY ' . implode(', ', $orderParts);
+        }
+
+        // Đếm số nhóm sau khi lọc, không đếm số bản ghi gốc.
+        $countSQL = "SELECT COUNT(*) FROM (SELECT " . implode(', ', $groupBy) . " FROM {$table} {$whereSQL} {$groupBySQL}) AS grouped_count";
+
+        $countStmt = self::execQuery($countSQL, $queryParams);
+        $total = (int)$countStmt->fetchColumn();
+
+        // Lấy dữ liệu của trang hiện tại sau khi nhóm.
+        $sql = "
+            SELECT {$select}
+            FROM {$table}
+            {$whereSQL}
+            {$groupBySQL}
+            {$orderSQL}
+            LIMIT {$limit} OFFSET {$offset}
+        ";
+
+        $stmt = self::execQuery($sql, $queryParams);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'rows' => $rows,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'total_pages' => (int)ceil($total / $limit)
+            ]
+        ];
+    }
+
     protected static function buildWhereAdv(array $filters = [], array $search = [], array $advanced = []): array {
         $conditions = [];
         $queryParams = [];

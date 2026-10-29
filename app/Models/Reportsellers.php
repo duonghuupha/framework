@@ -21,91 +21,100 @@ class Reportsellers extends Model
      *
      * Trả về cấu trúc: ['pagination' => [...], 'rows' => [...]]
      */
+    
     public static function reportSellers(array $params = []): array
     {
-        $page  = max(1, (int)($params['page'] ?? 1));
-        $limit = max(1, min(200, (int)($params['limit'] ?? 20)));
-        $offset = ($page - 1) * $limit;
+        $dateFrom = $params['search']['date_start'] ?? '';
+        $dateTo   = $params['search']['date_end'] ?? '';
+        $customer = trim($params['search']['customer'] ?? '');
+        $product  = trim($params['search']['product'] ?? '');
+        $code     = trim($params['search']['code'] ?? '');
 
-        $search = $params['search'] ?? [];
-        $code = trim((string)($search['code'] ?? ''));
-        $customer = trim((string)($search['customer'] ?? ''));
-        $product = trim((string)($search['product'] ?? ''));
-        $dateStart = trim((string)($search['date_start'] ?? ''));
-        $dateEnd = trim((string)($search['date_end'] ?? ''));
+        // Không đưa các bộ lọc đặc biệt vào SEARCH mặc định.
+        unset(
+            $params['search']['date_start'],
+            $params['search']['date_end'],
+            $params['search']['customer'],
+            $params['search']['product'],
+            $params['search']['code']
+        );
 
-        // Báo cáo chỉ lấy hóa đơn còn hiệu lực; active = 1 là đã hủy.
-        $where = ['vs.active = ?'];
-        $bind = [0];
+        $params['advanced'] = $params['advanced'] ?? [];
 
-        if ($code !== '') {
-            $where[] = 'vs.code LIKE ?';
-            $bind[] = '%' . $code . '%';
-        }
-
-        if ($customer !== '') {
-            $where[] = '(vs.customer_name LIKE ? OR vs.customer_phone LIKE ?)';
-            $bind[] = '%' . $customer . '%';
-            $bind[] = '%' . $customer . '%';
-        }
-
-        if ($product !== '') {
-            $where[] = 'EXISTS (
-                SELECT 1
-                FROM seller_items si
-                INNER JOIN products p ON p.id = si.product_id
-                WHERE si.seller_id = vs.id
-                  AND (p.name LIKE ? OR p.code LIKE ?)
-            )';
-            $bind[] = '%' . $product . '%';
-            $bind[] = '%' . $product . '%';
-        }
-
-        if ($dateStart !== '') {
-            $where[] = 'DATE(vs.created_at) >= ?';
-            $bind[] = $dateStart;
-        }
-        if ($dateEnd !== '') {
-            $where[] = 'DATE(vs.created_at) <= ?';
-            $bind[] = $dateEnd;
-        }
-
-        $whereSql = ' WHERE ' . implode(' AND ', $where);
-
-        // Đếm số hóa đơn khớp điều kiện, không thay đổi dữ liệu.
-        $countSql = "
-            SELECT COUNT(*) AS total
-            FROM v_sellers vs
-            {$whereSql}
-        ";
-        $countRows = self::dynamicQuery($countSql, $bind, 0);
-        $total = (int)($countRows[0]['total'] ?? 0);
-
-        // Lấy dữ liệu trang hiện tại.
-        $dataSql = "
-            SELECT
-                vs.id,
-                vs.code,
-                vs.created_at,
-                vs.customer_name,
-                vs.total_amount,
-                vs.discount_amount,
-                vs.final_amount
-            FROM v_sellers vs
-            {$whereSql}
-            ORDER BY vs.created_at DESC, vs.id DESC
-            LIMIT {$limit} OFFSET {$offset}
-        ";
-        $rows = self::dynamicQuery($dataSql, $bind, 0);
-
-        return [
-            'pagination' => [
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $total,
-                'total_pages' => (int)ceil($total / $limit),
-            ],
-            'rows' => $rows,
+        // Chỉ lấy hóa đơn chưa hủy.
+        $params['advanced'][] = [
+            'type' => 'raw',
+            'sql' => 's.active = ?',
+            'params' => [0]
         ];
+
+        // Lọc mã hóa đơn trước khi tổng hợp.
+        if ($code !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 's.code LIKE ?',
+                'params' => ["%{$code}%"]
+            ];
+        }
+
+        // Lọc khách hàng trước khi tổng hợp.
+        if ($customer !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => '(s.customer_name LIKE ? OR s.customer_phone LIKE ?)',
+                'params' => ["%{$customer}%", "%{$customer}%"]
+            ];
+        }
+
+        // Chỉ tổng hợp các hóa đơn có sản phẩm phù hợp.
+        if ($product !== '') {
+            $params['advanced'][] = [
+                'type' => 'exists',
+                'sql' => '
+                    SELECT 1
+                    FROM seller_items si
+                    INNER JOIN products p ON p.id = si.product_id
+                    WHERE si.seller_id = s.id
+                    AND (p.name LIKE ? OR p.code LIKE ?)
+                ',
+                'params' => ["%{$product}%", "%{$product}%"]
+            ];
+        }
+
+        // Lọc khoảng ngày trước khi nhóm.
+        if ($dateFrom !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 's.created_at >= ?',
+                'params' => [$dateFrom . ' 00:00:00']
+            ];
+        }
+
+        if ($dateTo !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 's.created_at < ?',
+                'params' => [
+                    date('Y-m-d', strtotime($dateTo . ' +1 day')) . ' 00:00:00'
+                ]
+            ];
+        }
+
+        $params['select'] = '
+            DATE(s.created_at) AS report_date,
+            COUNT(s.id) AS invoice_count,
+            SUM(s.total_amount) AS total_amount,
+            SUM(s.discount_amount) AS discount_amount,
+            SUM(s.final_amount) AS final_amount
+        ';
+
+        $params['group_by'] = ['DATE(s.created_at)'];
+        $params['order'] = ['report_date' => 'DESC'];
+
+        return self::paginateGroupByAdv(
+            'v_sellers s',
+            $params
+        );
     }
+
 }
