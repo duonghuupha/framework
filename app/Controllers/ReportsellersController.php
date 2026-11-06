@@ -74,4 +74,40 @@ class ReportsellersController extends Controller
 
         throw new InvalidArgumentException('Ngày lọc không hợp lệ: ' . $value);
     }
+
+
+    /**
+     * Danh sách hóa đơn theo ngày cho Dialog báo cáo
+     */
+    public function byDate($dateInput)
+    {
+        try {
+            $this->checkToken();
+
+            //$input = Input::all();
+
+            $date = trim((string)($dateInput?? ''));
+
+            if ($date === '') {
+                throw new InvalidArgumentException(
+                    'Vui lòng truyền ngày hóa đơn.'
+                );
+            }
+
+            $params = [
+                'page' => $input['page'] ?? 1,
+                'limit' => $input['limit'] ?? 20
+            ];
+
+            $result = $this->sellerModel->listSellersByDate(
+                $date,
+                $params
+            );
+
+            return $this->json($result);
+        } catch (Exception $e) {
+            return $this->json([], 'error', $e->getMessage());
+        }
+    }
+
 }
