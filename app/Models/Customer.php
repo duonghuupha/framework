@@ -6,6 +6,7 @@ class Customer extends Model{
     /*public static function listCustomer(array $params = []) : array{
         return self::paginate(static::$table, $params);
     }*/
+<<<<<<< HEAD
 
     public static function listCustomer(array $params = []): array
     {
@@ -14,28 +15,76 @@ class Customer extends Model{
         $phone = trim($params['search']['phone'] ?? '');
 
         // 2. Loại bỏ các trường sẽ xử lý bằng advanced
+=======
+    public static function listCustomer(array $params = []): array
+    {
+        // Tìm kiếm khách hàng
+        $name = trim($params['search']['name'] ?? '');
+        $phone = trim($params['search']['phone'] ?? '');
+
+>>>>>>> 22b24ca (105)
         unset(
             $params['search']['name'],
             $params['search']['phone']
         );
 
+<<<<<<< HEAD
         // 3. Tìm kiếm theo tên hoặc số điện thoại
         if ($name !== '') {
             $params['advanced'][] = [
                 'type'   => 'raw',
                 'sql'    => 'name LIKE ?',
+=======
+        // Truy vấn khách hàng kèm công nợ
+        $table = "(
+            SELECT
+                c.*,
+                COALESCE(s.seller_debt, 0) AS seller_debt,
+                COALESCE(r.receipt_amount, 0) AS receipt_amount,
+                (
+                    COALESCE(s.seller_debt, 0)
+                    - COALESCE(r.receipt_amount, 0)
+                ) AS current_debt
+            FROM customers c
+
+            LEFT JOIN (
+                SELECT customer_id, SUM(debt_amount) AS seller_debt
+                FROM sellers
+                GROUP BY customer_id
+            ) s ON s.customer_id = c.id
+
+            LEFT JOIN (
+                SELECT customer_id, SUM(total_amount) AS receipt_amount
+                FROM receipts
+                WHERE types = 'debt' AND status = 1
+                GROUP BY customer_id
+            ) r ON r.customer_id = c.id
+        ) AS customer_debt";
+
+        // Tìm kiếm tên và số điện thoại
+        if ($name !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 'name LIKE ?',
+>>>>>>> 22b24ca (105)
                 'params' => ["%{$name}%"]
             ];
         }
 
         if ($phone !== '') {
             $params['advanced'][] = [
+<<<<<<< HEAD
                 'type'   => 'raw',
                 'sql'    => 'phone LIKE ?',
+=======
+                'type' => 'raw',
+                'sql' => 'phone LIKE ?',
+>>>>>>> 22b24ca (105)
                 'params' => ["%{$phone}%"]
             ];
         }
 
+<<<<<<< HEAD
         // 4. Truy vấn khách hàng và tính công nợ
         $table = "(
             SELECT
@@ -61,6 +110,8 @@ class Customer extends Model{
         ) AS customer_summary";
 
         // 5. Phân trang theo Model cha
+=======
+>>>>>>> 22b24ca (105)
         return self::paginateAdv($table, $params);
     }
 
