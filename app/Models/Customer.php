@@ -10,57 +10,30 @@ class Customer extends Model{
     {
         // Tìm kiếm khách hàng
         $name = trim($params['search']['name'] ?? '');
-        $phone = trim($params['search']['phone'] ?? '');
 
-        unset(
-            $params['search']['name'],
-            $params['search']['phone']
-        );
+        unset($params['search']['name']);
 
         // Truy vấn khách hàng kèm công nợ
-        $table = "(
-            SELECT
-                c.*,
-                COALESCE(s.seller_debt, 0) AS seller_debt,
-                COALESCE(r.receipt_amount, 0) AS receipt_amount,
-                (
-                    COALESCE(s.seller_debt, 0)
-                    - COALESCE(r.receipt_amount, 0)
-                ) AS current_debt
-            FROM customers c
-
-            LEFT JOIN (
-                SELECT customer_id, SUM(debt_amount) AS seller_debt
-                FROM sellers
-                GROUP BY customer_id
-            ) s ON s.customer_id = c.id
-
-            LEFT JOIN (
-                SELECT customer_id, SUM(total_amount) AS receipt_amount
-                FROM receipts
-                WHERE types = 'debt' AND status = 1
-                GROUP BY customer_id
-            ) r ON r.customer_id = c.id
-        ) AS customer_debt";
+        $sql = "(SELECT c.*,
+                    COALESCE((SELECT SUM(s.debt_amount) FROM sellers s WHERE s.customer_id = c.id AND s.active = 0 AND s.status = 'debt'), 0) AS seller_amount,
+                    COALESCE((SELECT SUM(r.total_amount) FROM receipts r WHERE r.customer_id = c.id AND r.status = 1 AND r.types = 'debt'), 0) AS receipt_amount
+                    FROM customers c
+                ) AS customer_summary";
 
         // Tìm kiếm tên và số điện thoại
         if ($name !== '') {
             $params['advanced'][] = [
                 'type' => 'raw',
-                'sql' => 'name LIKE ?',
-                'params' => ["%{$name}%"]
+                'sql' => '(name LIKE ? OR phone LIKE ? OR code LIKE ?)',
+                'params' => [
+                    "%{$name}%",
+                    "%{$name}%",
+                    "%{$name}%"
+                ]
             ];
         }
 
-        if ($phone !== '') {
-            $params['advanced'][] = [
-                'type' => 'raw',
-                'sql' => 'phone LIKE ?',
-                'params' => ["%{$phone}%"]
-            ];
-        }
-
-        return self::paginateAdv($table, $params);
+        return self::paginateAdv($sql, $params);
     }
 
     public static function dupliObjCustomer($code, $id) : array|false{

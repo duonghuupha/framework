@@ -12,8 +12,7 @@ class CustomerController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'name' => $input['search']['name'] ?? '',
-                'phone' => $input['search']['name'] ?? '',
+                'name' => $input['search']['name'] ?? ''
             ],
             'filters' => [],
             'order' => [
