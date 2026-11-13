@@ -3,11 +3,7 @@ class Customer extends Model{
     protected static string $table = "customers"; //bảng khách hàng
     protected static string $seller = "sellers"; //bảng hóa đơn
 
-    /*public static function listCustomer(array $params = []) : array{
-        return self::paginate(static::$table, $params);
-    }*/
-    public static function listCustomer(array $params = []): array
-    {
+    public static function listCustomer(array $params = []): array{
         // Tìm kiếm khách hàng
         $name = trim($params['search']['name'] ?? '');
 
@@ -32,7 +28,6 @@ class Customer extends Model{
                 ]
             ];
         }
-
         return self::paginateAdv($sql, $params);
     }
 
@@ -86,38 +81,83 @@ class Customer extends Model{
         return self::find($id);
     }
 
-    public function getCustomerHistory(int $id, array $params = []) : array{
+    public function getCustomerHistory(int $id, array $params = []): array
+    {
+        // Lấy điều kiện tìm kiếm
         $code = trim($params['search']['code'] ?? '');
         $dateFrom = $params['search']['date_start'] ?? '';
         $dateTo = $params['search']['date_end'] ?? '';
+
         unset(
             $params['search']['code'],
             $params['search']['date_start'],
             $params['search']['date_end']
         );
 
-        $params['advanced'][] = [
-            'type' => 'raw',
-            'sql' => 'customer_id = ?',
-            'params' => [$id]
-        ];
+        // Đảm bảo ID là số nguyên trước khi đưa vào SQL
+        $customerId = (int)$id;
 
-        if($code !== ''){
+        // Hợp nhất lịch sử hóa đơn và phiếu thu
+        $table = "(
+            SELECT
+                id,
+                code,
+                created_at,
+                'seller' AS transaction_type,
+                final_amount AS incurred_amount,
+                paid_amount AS paid_amount
+            FROM sellers
+            WHERE active = 0
+                AND customer_id = {$customerId}
+
+            UNION ALL
+
+            SELECT
+                id,
+                code,
+                created_at,
+                'receipt' AS transaction_type,
+                0 AS incurred_amount,
+                total_amount AS paid_amount
+            FROM receipts
+            WHERE status = 1
+                AND customer_id = {$customerId}
+                AND types = 'debt'
+        ) AS customer_history";
+
+        // Tìm kiếm theo mã hóa đơn hoặc mã phiếu thu
+        if ($code !== '') {
             $params['advanced'][] = [
                 'type' => 'raw',
                 'sql' => 'code LIKE ?',
-                'params' => ["{$code}"]
+                'params' => ["%{$code}%"]
             ];
         }
 
-        if($dateFrom && $dateTo){
-            $params['advanced'][] =[
+        // Lọc từ ngày
+        if ($dateFrom !== '') {
+            $params['advanced'][] = [
                 'type' => 'raw',
-                'sql' => 'DATE(created_at) BETWEEN ? AND ?',
-                'params' => [$dateFrom, $dateTo]
+                'sql' => 'DATE(created_at) >= ?',
+                'params' => [$dateFrom]
             ];
         }
-        return self::paginateAdv(static::$seller, $params);
+
+        // Lọc đến ngày
+        if ($dateTo !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 'DATE(created_at) <= ?',
+                'params' => [$dateTo]
+            ];
+        }
+
+        // Sắp xếp giao dịch mới nhất trước
+        $params['order'] = [
+            'created_at' => 'DESC'
+        ];
+
+        return self::paginateAdv($table, $params);
     }
 }
 ?>

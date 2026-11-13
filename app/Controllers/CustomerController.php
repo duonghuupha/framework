@@ -117,7 +117,7 @@ class CustomerController extends Controller{
                 'date_end' => $date_to
             ],
             'filters' => [],
-            'order' => ['id' => 'DESC']
+            'order' => ['created_at' => 'DESC']
         ];
         $result = $this->customerModel->getCustomerHistory($id, $params);
         return $this->json($result);
