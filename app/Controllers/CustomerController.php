@@ -122,5 +122,14 @@ class CustomerController extends Controller{
         $result = $this->customerModel->getCustomerHistory($id, $params);
         return $this->json($result);
     }
+
+    public function debtDetail($id){
+        $payload = $this->checkToken();
+        if (empty($id)) {
+            return $this->json([], 'error', 'Thiếu khách hàng.');
+        }
+        $result = $this->customerModel->getDebtCustomerDetail($id);
+        return $this->json($result);
+    }  
 }
 ?>

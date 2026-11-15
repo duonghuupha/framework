@@ -61,7 +61,7 @@ class Customer extends Model{
 
     public static function getDebtCustomer(int $customerId): array{
         // tong cong no phat sinh
-        $sqlSeller = "SELECT COALESCE(SUM(debt_amount), 0) total FROM sellers WHERE customer_id = ?";
+        $sqlSeller = "SELECT COALESCE(SUM(debt_amount), 0) total FROM sellers WHERE customer_id = ? AND active = 0 AND status = 'debt'";
         $seller = self::dynamicQuery($sqlSeller, [$customerId]);
         $sellerDebt = (float)($seller[0]['total'] ?? 0);
 
@@ -98,32 +98,12 @@ class Customer extends Model{
         $customerId = (int)$id;
 
         // Hợp nhất lịch sử hóa đơn và phiếu thu
-        $table = "(
-            SELECT
-                id,
-                code,
-                created_at,
-                'seller' AS transaction_type,
-                final_amount AS incurred_amount,
-                paid_amount AS paid_amount
-            FROM sellers
-            WHERE active = 0
-                AND customer_id = {$customerId}
-
-            UNION ALL
-
-            SELECT
-                id,
-                code,
-                created_at,
-                'receipt' AS transaction_type,
-                0 AS incurred_amount,
-                total_amount AS paid_amount
-            FROM receipts
-            WHERE status = 1
-                AND customer_id = {$customerId}
-                AND types = 'debt'
-        ) AS customer_history";
+        $table = "(SELECT id, code, created_at, 'seller' AS transaction_type, final_amount AS incurred_amount, paid_amount AS paid_amount FROM sellers
+                    WHERE active = 0 AND customer_id = {$customerId}
+                UNION ALL
+                SELECT id, code, created_at, 'receipt' AS transaction_type, 0 AS incurred_amount, total_amount AS paid_amount FROM receipts
+                    WHERE status = 1 AND customer_id = {$customerId} AND types = 'debt'
+                ) AS customer_history";
 
         // Tìm kiếm theo mã hóa đơn hoặc mã phiếu thu
         if ($code !== '') {
@@ -158,6 +138,46 @@ class Customer extends Model{
         ];
 
         return self::paginateAdv($table, $params);
+    }
+
+    public static function getDebtCustomerDetail(int $customerId): array{
+        // Tổng phát sinh và thanh toán tại thời điểm bán hàng
+        $sqlSeller = "
+            SELECT
+                COALESCE(SUM(final_amount), 0) AS total_incurred,
+                COALESCE(SUM(paid_amount), 0) AS total_paid
+            FROM sellers
+            WHERE customer_id = ?
+                AND active = 0
+        ";
+
+        $seller = self::dynamicQuery($sqlSeller, [$customerId]);
+
+        $totalIncurred = (float)($seller[0]['total_incurred'] ?? 0);
+        $sellerPaid = (float)($seller[0]['total_paid'] ?? 0);
+
+        // Tổng tiền khách thanh toán qua phiếu thu
+        $sqlReceipt = "
+            SELECT
+                COALESCE(SUM(total_amount), 0) AS total_paid
+            FROM receipts
+            WHERE customer_id = ?
+                AND types = 'debt'
+                AND status = 1
+        ";
+
+        $receipt = self::dynamicQuery($sqlReceipt, [$customerId]);
+
+        $receiptPaid = (float)($receipt[0]['total_paid'] ?? 0);
+
+        // Tổng thanh toán
+        $totalPaid = $sellerPaid + $receiptPaid;
+
+        return [
+            'total_incurred' => $totalIncurred,
+            'total_paid' => $totalPaid,
+            'current_debt' => $totalIncurred - $totalPaid
+        ];
     }
 }
 ?>
