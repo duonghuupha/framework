@@ -81,27 +81,25 @@ class Customer extends Model{
         return self::find($id);
     }
 
-    public function getCustomerHistory(int $id, array $params = []): array
-    {
+    public function getCustomerHistory(int $id, array $params = []): array{
         // Lấy điều kiện tìm kiếm
         $code = trim($params['search']['code'] ?? '');
         $dateFrom = $params['search']['date_start'] ?? '';
         $dateTo = $params['search']['date_end'] ?? '';
-
         unset(
             $params['search']['code'],
             $params['search']['date_start'],
             $params['search']['date_end']
         );
-
         // Đảm bảo ID là số nguyên trước khi đưa vào SQL
         $customerId = (int)$id;
-
         // Hợp nhất lịch sử hóa đơn và phiếu thu
-        $table = "(SELECT id, code, created_at, 'seller' AS transaction_type, final_amount AS incurred_amount, paid_amount AS paid_amount FROM sellers
+        $table = "(SELECT id AS seller_id, NULL AS receipt_id, code, created_at, 'seller' AS transaction_type, 
+					final_amount AS incurred_amount, paid_amount AS paid_amount FROM sellers
                     WHERE active = 0 AND customer_id = {$customerId}
                 UNION ALL
-                SELECT id, code, created_at, 'receipt' AS transaction_type, 0 AS incurred_amount, total_amount AS paid_amount FROM receipts
+                SELECT NULL AS seller_id, id AS receipt_id, code, created_at, 'receipt' AS transaction_type, 
+					0 AS incurred_amount, total_amount AS paid_amount FROM receipts
                     WHERE status = 1 AND customer_id = {$customerId} AND types = 'debt'
                 ) AS customer_history";
 
@@ -113,7 +111,6 @@ class Customer extends Model{
                 'params' => ["%{$code}%"]
             ];
         }
-
         // Lọc từ ngày
         if ($dateFrom !== '') {
             $params['advanced'][] = [
@@ -122,7 +119,6 @@ class Customer extends Model{
                 'params' => [$dateFrom]
             ];
         }
-
         // Lọc đến ngày
         if ($dateTo !== '') {
             $params['advanced'][] = [
@@ -131,12 +127,10 @@ class Customer extends Model{
                 'params' => [$dateTo]
             ];
         }
-
         // Sắp xếp giao dịch mới nhất trước
         $params['order'] = [
             'created_at' => 'DESC'
         ];
-
         return self::paginateAdv($table, $params);
     }
 
