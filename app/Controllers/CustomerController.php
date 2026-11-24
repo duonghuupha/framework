@@ -12,8 +12,7 @@ class CustomerController extends Controller{
             'page' => $input['page'] ?? 1,
             'limit' => $input['limit'] ?? 20,
             'search' => [
-                'name' => $input['search']['name'] ?? '',
-                'phone' => $input['search']['name'] ?? '',
+                'name' => $input['search']['name'] ?? ''
             ],
             'filters' => [],
             'order' => [
@@ -118,10 +117,19 @@ class CustomerController extends Controller{
                 'date_end' => $date_to
             ],
             'filters' => [],
-            'order' => ['id' => 'DESC']
+            'order' => ['created_at' => 'DESC']
         ];
         $result = $this->customerModel->getCustomerHistory($id, $params);
         return $this->json($result);
     }
+
+    public function debtDetail($id){
+        $payload = $this->checkToken();
+        if (empty($id)) {
+            return $this->json([], 'error', 'Thiếu khách hàng.');
+        }
+        $result = $this->customerModel->getDebtCustomerDetail($id);
+        return $this->json($result);
+    }  
 }
 ?>

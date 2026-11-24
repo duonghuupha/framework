@@ -55,6 +55,7 @@ $router->delete('/sellers/{id}', 'SellersController@delete');
 $router->get('/receipts', 'ReceiptsController@index');
 $router->post('/receipts', 'ReceiptsController@add');
 $router->put('/receipts/{id}', 'ReceiptsController@cancelReceipt');
+$router->get('/receipts/detail/{id}', 'ReceiptsController@detail');
 /**Phiếu chi */
 $router->get('/expenses', 'ExpensesController@index');
 $router->post('/expenses', 'ExpensesController@add');
@@ -71,6 +72,7 @@ $router->get('/services/combo', 'ServicesController@combo');
 $router->get('/customer/{id}/debt', 'CustomerController@debt');
 $router->get('/manufacturer/{id}/debt', 'ManufacturerController@debt');
 $router->get('/services/data_list', 'ServicesController@data_list');
+$router->get('/customer/{id}/debtDetail', 'CustomerController@debtDetail');
 /**Các API báo cáo*/
 $router->get('/reportsellers', 'ReportsellersController@index');
 $router->get('/reportsellers/byDate/{dateInput}', 'ReportsellersController@byDate');

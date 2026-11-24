@@ -112,27 +112,15 @@ class ReportSellers extends Model
      * Dùng cho Dialog báo cáo bán hàng
      * Chỉ nhận ngày và tham số phân trang
      * ========================================================== */
-    public static function listSellersByDate(
-        string $date,
-        array $params = []
-    ): array {
+    public static function listSellersByDate(string $date, array $params = []): array {
         // Kiểm tra định dạng ngày Y-m-d.
         $dateObject = DateTime::createFromFormat('!Y-m-d', $date);
 
-        if (
-            !$dateObject ||
-            $dateObject->format('Y-m-d') !== $date
-        ) {
-            throw new InvalidArgumentException(
-                'Ngày hóa đơn không hợp lệ. Định dạng yêu cầu: Y-m-d.'
-            );
+        if (!$dateObject || $dateObject->format('Y-m-d') !== $date) {
+            throw new InvalidArgumentException('Ngày hóa đơn không hợp lệ. Định dạng yêu cầu: Y-m-d.');
         }
-
         $dateStart = $dateObject->format('Y-m-d 00:00:00');
-
-        $dateEnd = (clone $dateObject)
-            ->modify('+1 day')
-            ->format('Y-m-d 00:00:00');
+        $dateEnd = (clone $dateObject)->modify('+1 day')->format('Y-m-d 00:00:00');
 
         // Chỉ giữ tham số phân trang.
         $params = [

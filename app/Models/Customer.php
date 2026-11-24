@@ -3,8 +3,32 @@ class Customer extends Model{
     protected static string $table = "customers"; //bảng khách hàng
     protected static string $seller = "sellers"; //bảng hóa đơn
 
-    public static function listCustomer(array $params = []) : array{
-        return self::paginate(static::$table, $params);
+    public static function listCustomer(array $params = []): array{
+        // Tìm kiếm khách hàng
+        $name = trim($params['search']['name'] ?? '');
+
+        unset($params['search']['name']);
+
+        // Truy vấn khách hàng kèm công nợ
+        $sql = "(SELECT c.*,
+                    COALESCE((SELECT SUM(s.debt_amount) FROM sellers s WHERE s.customer_id = c.id AND s.active = 0 AND s.status = 'debt'), 0) AS seller_amount,
+                    COALESCE((SELECT SUM(r.total_amount) FROM receipts r WHERE r.customer_id = c.id AND r.status = 1 AND r.types = 'debt'), 0) AS receipt_amount
+                    FROM customers c
+                ) AS customer_summary";
+
+        // Tìm kiếm tên và số điện thoại
+        if ($name !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => '(name LIKE ? OR phone LIKE ? OR code LIKE ?)',
+                'params' => [
+                    "%{$name}%",
+                    "%{$name}%",
+                    "%{$name}%"
+                ]
+            ];
+        }
+        return self::paginateAdv($sql, $params);
     }
 
     public static function dupliObjCustomer($code, $id) : array|false{
@@ -37,7 +61,7 @@ class Customer extends Model{
 
     public static function getDebtCustomer(int $customerId): array{
         // tong cong no phat sinh
-        $sqlSeller = "SELECT COALESCE(SUM(debt_amount), 0) total FROM sellers WHERE customer_id = ?";
+        $sqlSeller = "SELECT COALESCE(SUM(debt_amount), 0) total FROM sellers WHERE customer_id = ? AND active = 0 AND status = 'debt'";
         $seller = self::dynamicQuery($sqlSeller, [$customerId]);
         $sellerDebt = (float)($seller[0]['total'] ?? 0);
 
@@ -57,7 +81,8 @@ class Customer extends Model{
         return self::find($id);
     }
 
-    public function getCustomerHistory(int $id, array $params = []) : array{
+    public function getCustomerHistory(int $id, array $params = []): array{
+        // Lấy điều kiện tìm kiếm
         $code = trim($params['search']['code'] ?? '');
         $dateFrom = $params['search']['date_start'] ?? '';
         $dateTo = $params['search']['date_end'] ?? '';
@@ -66,29 +91,87 @@ class Customer extends Model{
             $params['search']['date_start'],
             $params['search']['date_end']
         );
+        // Đảm bảo ID là số nguyên trước khi đưa vào SQL
+        $customerId = (int)$id;
+        // Hợp nhất lịch sử hóa đơn và phiếu thu
+        $table = "(SELECT id AS seller_id, NULL AS receipt_id, code, created_at, 'seller' AS transaction_type, 
+					final_amount AS incurred_amount, paid_amount AS paid_amount FROM sellers
+                    WHERE active = 0 AND customer_id = {$customerId}
+                UNION ALL
+                SELECT NULL AS seller_id, id AS receipt_id, code, created_at, 'receipt' AS transaction_type, 
+					0 AS incurred_amount, total_amount AS paid_amount FROM receipts
+                    WHERE status = 1 AND customer_id = {$customerId} AND types = 'debt'
+                ) AS customer_history";
 
-        $params['advanced'][] = [
-            'type' => 'raw',
-            'sql' => 'customer_id = ?',
-            'params' => [$id]
-        ];
-
-        if($code !== ''){
+        // Tìm kiếm theo mã hóa đơn hoặc mã phiếu thu
+        if ($code !== '') {
             $params['advanced'][] = [
                 'type' => 'raw',
                 'sql' => 'code LIKE ?',
-                'params' => ["{$code}"]
+                'params' => ["%{$code}%"]
             ];
         }
-
-        if($dateFrom && $dateTo){
-            $params['advanced'][] =[
+        // Lọc từ ngày
+        if ($dateFrom !== '') {
+            $params['advanced'][] = [
                 'type' => 'raw',
-                'sql' => 'DATE(created_at) BETWEEN ? AND ?',
-                'params' => [$dateFrom, $dateTo]
+                'sql' => 'DATE(created_at) >= ?',
+                'params' => [$dateFrom]
             ];
         }
-        return self::paginateAdv(static::$seller, $params);
+        // Lọc đến ngày
+        if ($dateTo !== '') {
+            $params['advanced'][] = [
+                'type' => 'raw',
+                'sql' => 'DATE(created_at) <= ?',
+                'params' => [$dateTo]
+            ];
+        }
+        // Sắp xếp giao dịch mới nhất trước
+        $params['order'] = [
+            'created_at' => 'DESC'
+        ];
+        return self::paginateAdv($table, $params);
+    }
+
+    public static function getDebtCustomerDetail(int $customerId): array{
+        // Tổng phát sinh và thanh toán tại thời điểm bán hàng
+        $sqlSeller = "
+            SELECT
+                COALESCE(SUM(final_amount), 0) AS total_incurred,
+                COALESCE(SUM(paid_amount), 0) AS total_paid
+            FROM sellers
+            WHERE customer_id = ?
+                AND active = 0
+        ";
+
+        $seller = self::dynamicQuery($sqlSeller, [$customerId]);
+
+        $totalIncurred = (float)($seller[0]['total_incurred'] ?? 0);
+        $sellerPaid = (float)($seller[0]['total_paid'] ?? 0);
+
+        // Tổng tiền khách thanh toán qua phiếu thu
+        $sqlReceipt = "
+            SELECT
+                COALESCE(SUM(total_amount), 0) AS total_paid
+            FROM receipts
+            WHERE customer_id = ?
+                AND types = 'debt'
+                AND status = 1
+        ";
+
+        $receipt = self::dynamicQuery($sqlReceipt, [$customerId]);
+
+        $receiptPaid = (float)($receipt[0]['total_paid'] ?? 0);
+
+        // Tổng thanh toán
+        $totalPaid = $sellerPaid + $receiptPaid;
+
+        return [
+            'total_incurred' => $totalIncurred,
+            'total_paid' => $totalPaid,
+            'current_debt' => $totalIncurred - $totalPaid
+        ];
     }
 }
 ?>
