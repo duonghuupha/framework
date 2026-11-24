@@ -92,5 +92,18 @@ class ReceiptsController extends Controller{
             return $this->json([], 'error', $e->getMessage());  
         }
     }
+
+    /**
+     * Chi tiết phiếu thu
+     */
+    public function detail($id){
+        try{
+            $payload = $this->checkToken();
+            $result = $this->receiptModel->getReceiptById($id);
+            return $this->json($result);
+        }catch(Exception $e){
+            return $this->json([], 'error', $e->getMessage());
+        }
+    }
 }
 ?>

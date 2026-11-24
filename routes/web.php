@@ -55,6 +55,7 @@ $router->delete('/sellers/{id}', 'SellersController@delete');
 $router->get('/receipts', 'ReceiptsController@index');
 $router->post('/receipts', 'ReceiptsController@add');
 $router->put('/receipts/{id}', 'ReceiptsController@cancelReceipt');
+$router->get('/receipts/detail/{id}', 'ReceiptsController@detail');
 /**Phiếu chi */
 $router->get('/expenses', 'ExpensesController@index');
 $router->post('/expenses', 'ExpensesController@add');

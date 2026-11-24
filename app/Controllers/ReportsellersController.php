@@ -7,8 +7,7 @@ class ReportsellersController extends Controller
 {
     protected $reportSellersModel;
 
-    public function __construct()
-    {
+    public function __construct(){
         $this->reportSellersModel = new Reportsellers();
     }
 
@@ -16,8 +15,7 @@ class ReportsellersController extends Controller
      * Danh sách báo cáo bán hàng có lọc và phân trang.
      * Điều kiện ngày chấp nhận YYYY-MM-DD (input type=date) hoặc d/m/Y.
      */
-    public function index()
-    {
+    public function index(){
         try {
             $this->checkToken();
             $input = Input::all();
@@ -50,8 +48,7 @@ class ReportsellersController extends Controller
     }
 
     /** Chuẩn hóa ngày về YYYY-MM-DD; chuỗi rỗng được giữ nguyên. */
-    private function normalizeReportDate($value): string
-    {
+    private function normalizeReportDate($value): string{
         $value = trim((string)$value);
         if ($value === '') {
             return '';
@@ -79,35 +76,24 @@ class ReportsellersController extends Controller
     /**
      * Danh sách hóa đơn theo ngày cho Dialog báo cáo
      */
-    public function byDate($dateInput)
-    {
+    public function byDate($dateInput){
         try {
             $this->checkToken();
-
-            //$input = Input::all();
-
             $date = trim((string)($dateInput?? ''));
-
             if ($date === '') {
-                throw new InvalidArgumentException(
-                    'Vui lòng truyền ngày hóa đơn.'
-                );
+                throw new InvalidArgumentException('Vui lòng truyền ngày hóa đơn.');
             }
-
             $params = [
                 'page' => $input['page'] ?? 1,
                 'limit' => $input['limit'] ?? 20
             ];
-
             $result = $this->sellerModel->listSellersByDate(
                 $date,
                 $params
             );
-
             return $this->json($result);
         } catch (Exception $e) {
             return $this->json([], 'error', $e->getMessage());
         }
     }
-
 }

@@ -181,7 +181,7 @@ class Receipts extends Model{
 	}
 //===========================================================================//
 //===========================================================================//
-	private function getReceiptById($id){
+	public function getReceiptById($id){
 		return self::find($id);
 	}
 
