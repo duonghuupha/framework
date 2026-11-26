@@ -79,7 +79,8 @@ class ReportsellersController extends Controller
     public function byDate($dateInput){
         try {
             $this->checkToken();
-            $date = trim((string)($dateInput?? ''));
+            $input = Input::all();
+            $date = trim((string)($input['dateInput']?? ''));
             if ($date === '') {
                 throw new InvalidArgumentException('Vui lòng truyền ngày hóa đơn.');
             }
@@ -87,7 +88,7 @@ class ReportsellersController extends Controller
                 'page' => $input['page'] ?? 1,
                 'limit' => $input['limit'] ?? 20
             ];
-            $result = $this->sellerModel->listSellersByDate(
+            $result = $this->reportSellersModel->listSellersByDate(
                 $date,
                 $params
             );
